@@ -1,0 +1,21 @@
+{
+  "name": "com.gamgie.oxipital.core",
+  "version": "1.0.0",
+  "displayName": "Oxipital Core",
+  "description": "Moteur de particules temps réel d'Oxipital : ballet d'orbes en VFX Graph, forces, mode vie infinie, flux optique, splats. Piloté en direct depuis Chataigne via OSCQuery.",
+  "unity": "6000.3",
+  "author": {
+    "name": "Gamgie",
+    "url": "https://github.com/Gamgie"
+  },
+  "documentationUrl": "https://github.com/Gamgie/Oxipital-Packages",
+  "dependencies": {
+    "com.unity.render-pipelines.high-definition": "17.3.0",
+    "com.unity.visualeffectgraph": "17.3.0",
+    "com.unity.cloud.gltfast": "6.18.0",
+    "com.unity.mathematics": "1.3.3",
+    "com.unity.ugui": "2.0.0",
+    "com.benkuper.oscquery": "1.2.4",
+    "jp.keijiro.klak.spout": "2.0.6"
+  }
+}

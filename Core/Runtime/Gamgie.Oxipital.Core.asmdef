@@ -1,0 +1,23 @@
+{
+    "name": "Gamgie.Oxipital.Core",
+    "rootNamespace": "Oxipital",
+    "references": [
+        "Unity.VisualEffectGraph.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.HighDefinition.Runtime",
+        "Unity.Mathematics",
+        "UnityEngine.UI",
+        "glTFast",
+        "OSCQuery",
+        "Klak.Spout.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
