@@ -10,7 +10,7 @@ namespace Oxipital
     {
         public enum CameraMovementType { Orbital, Spaceship, Sensor }
 
-        // Read by the project's ToolsManager to show or hide Graphy
+        // Exposed to Chataigne but unused (Graphy is shown by the project's ToolsManager.activateGraphy)
         public bool renderMainWindow = true;
 
         [Header("General Parameters")]

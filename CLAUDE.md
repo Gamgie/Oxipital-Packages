@@ -135,7 +135,9 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
   Cinemachine blend starts smoothly instead of snapping. It also drives shared FOV/ortho/noise/transition-time
   parameters into whichever camera is active, and toggles `isFullDome` for dome-rig output. `xWing` (the model
   shown with the spaceship camera, `Camera/Runtime/Models/XWing`) and `domeCameraRig` are optional.
-  `renderMainWindow` is read by the host project's own tools (e.g. to show Graphy); the package knows nothing of them.
+  `renderMainWindow` is exposed to Chataigne but drives nothing. It used to show or hide Graphy through an object
+  tagged "Tools Manager" that no scene ever had, so Chataigne sessions keep it off: do not wire it to anything
+  without checking them (Graphy is shown by the host project's `ToolsManager.activateGraphy`).
 - `CameraMovement` (abstract) is the interface each movement mode implements: `Init`, `UpdateMovement`,
   `SetActive`, `Reset`, `UpdateFOV`/`UpdateOrthoSize`, `UpdateZOffset`, `UpdateNoiseParameter` (Cinemachine Perlin
   noise), `SetCameraTransform`.
