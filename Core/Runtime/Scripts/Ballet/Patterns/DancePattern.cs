@@ -13,6 +13,9 @@ namespace Oxipital
         public float weight = 1;
         [Range(0, 1)]
         public float speedWeight = 1;
+
+        // Reused by getPatternPositions, so no list is allocated per frame
+        protected readonly List<Vector3> positionsCache = new List<Vector3>();
         public virtual void updatePattern<T>(DancerGroup<T> group) where T : Dancer
         {
             if (group.items.Count == 0) return;
@@ -53,7 +56,8 @@ namespace Oxipital
 
         protected virtual List<Vector3> getPatternPositions<T>(DancerGroup<T> group) where T : Dancer
         {
-            List<Vector3> positions = new List<Vector3>();
+            List<Vector3> positions = positionsCache;
+            positions.Clear();
             for (int i = 0; i < group.items.Count; i++) positions.Add(Vector3.zero);
             return positions;
         }

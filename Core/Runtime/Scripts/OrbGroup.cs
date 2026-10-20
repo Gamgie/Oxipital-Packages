@@ -340,6 +340,29 @@ namespace Oxipital
         private string lastTexturePath = "";
         private Texture2D spoutTexture2D;
 
+        // Per-frame work without allocation : property IDs instead of names, reused lists, and the
+        // gradients / "Emitter Color" texture are only sent to the VFX when they change.
+        static readonly int emitterIntensityID = Shader.PropertyToID("Emitter Intensity");
+        static readonly int orbBufferID = Shader.PropertyToID("Orb Buffer");
+        static readonly int colorOverLifeID = Shader.PropertyToID("Color Over Life");
+        static readonly int colorOverSpeedID = Shader.PropertyToID("Color Over Speed");
+        static readonly int sourcePositionID = Shader.PropertyToID("Source Position");
+        // Force buffer property IDs by force group name ("Force Group 1" and "Force Group 1B")
+        static readonly Dictionary<string, (int buffer, int bufferB)> forceBufferIDs = new Dictionary<string, (int, int)>();
+        readonly HashSet<string> missingForceBuffers = new HashSet<string>();
+
+        readonly List<MeshRenderer> meshRenderers = new List<MeshRenderer>();
+        readonly List<Light> lights = new List<Light>();
+
+        readonly GradientColorKey[] gradientColorKeys = new GradientColorKey[2];
+        readonly GradientAlphaKey[] gradientAlphaKeys = new GradientAlphaKey[2];
+        bool gradientsSent;
+        Color sentColor, sentColorLife, sentColorSpeed;
+        float sentColorLifeRange, sentColorSpeedRange, sentHdrMultiplier;
+
+        Texture emitterColorTexture; // last texture sent as "Emitter Color"
+        string textureFolderPathUsed, textureNameUsed, textureFullPath;
+
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -350,6 +373,8 @@ namespace Oxipital
             infiniteCount = 0;
             // pclGraphics = GetComponent<PCLToGraphicsBuffer>();
             textureLoaded = false;
+            gradientsSent = false;
+            emitterColorTexture = null;
 			spoutTexture2D = new Texture2D(spoutTexture.width, spoutTexture.height, TextureFormat.RGBAFloat, false);
 		}
 
@@ -367,16 +392,12 @@ namespace Oxipital
 
             base.Update();
 
-            colorOverLife = CreateGradient(color, colorLife, 0, 1, 0, colorLifeRange);
-            colorOverSpeed = CreateGradient(Color.black, colorSpeed, 1, 1, (1-colorSpeedRange), 1);
-
 			bool isDying = killProgress > 0;
             // In infinite life mode, particles are only spawned by the SpawnInfinite event
-            vfx.SetFloat("Emitter Intensity", isDying || infiniteLife ? 0 : dancerIntensity);
-            vfx.SetGraphicsBuffer("Orb Buffer", buffer);
-            vfx.SetGradient("Color Over Life", colorOverLife);
-            vfx.SetGradient("Color Over Speed", colorOverSpeed);
-            vfx.SetVector3("Source Position", transform.position);
+            vfx.SetFloat(emitterIntensityID, isDying || infiniteLife ? 0 : dancerIntensity);
+            vfx.SetGraphicsBuffer(orbBufferID, buffer);
+            updateGradients();
+            vfx.SetVector3(sourcePositionID, transform.position);
 
 			foreach (var item in items) item.debugColor = color;
 
@@ -437,7 +458,13 @@ namespace Oxipital
             }
 
 			// Load 2D Texture
-			string fullPath = Path.Combine(textureFolderPath, textureName);
+			if (textureFullPath == null || textureFolderPath != textureFolderPathUsed || textureName != textureNameUsed)
+			{
+				textureFullPath = Path.Combine(textureFolderPath, textureName);
+				textureFolderPathUsed = textureFolderPath;
+				textureNameUsed = textureName;
+			}
+			string fullPath = textureFullPath;
             if (fullPath != lastTexturePath) textureLoaded = false;
 
 			if (textureFolderPath != "" && textureName != "" && textureLoaded == false)
@@ -445,7 +472,7 @@ namespace Oxipital
                 Texture2D tex = LoadTextureFromPath(fullPath);
                 if (tex != null)
                 {
-                    setColor(tex, "Emitter Color");
+                    setEmitterColor(tex);
                     textureLoaded = true;
                     lastTexturePath = fullPath;
 
@@ -456,56 +483,81 @@ namespace Oxipital
             {
 				Graphics.ConvertTexture(spoutTexture, spoutTexture2D);
 				//Texture2D newTexture = toTexture2D(spoutTexture);
-				setColor(spoutTexture2D, "Emitter Color");
+				setEmitterColor(spoutTexture2D);
 			}
             else
             {
-                setColor(Texture2D.whiteTexture, "Emitter Color");
+                setEmitterColor(Texture2D.whiteTexture);
             }
 
 
-            MeshRenderer[] renderers = GetComponentsInChildren<MeshRenderer>();
-            foreach (MeshRenderer r in renderers)
+            Color meshColor = Color.Lerp(Color.black, color, meshColorIntensity);
+            meshColor.a = meshOpacity;
+            GetComponentsInChildren(meshRenderers);
+            foreach (MeshRenderer r in meshRenderers)
             {
+                Material material = r.material;
                 if (meshOpacity == 1)
                 {
-                    if (r.material.renderQueue > (int)RenderQueue.GeometryLast)
+                    if (material.renderQueue > (int)RenderQueue.GeometryLast)
                     {
                         r.material = opaqueMaterial;
+                        material = r.material;
                     }
                 }
                 else
                 {
-                    if (r.material.renderQueue < (int)RenderQueue.GeometryLast)
+                    if (material.renderQueue < (int)RenderQueue.GeometryLast)
                     {
                         r.material = transparentMaterial;
+                        material = r.material;
                     }
                 }
 
-                Color c = r.material.color;
-                c = Color.Lerp(Color.black, color, meshColorIntensity);
-                c.a = meshOpacity;
-                r.material.color = c;
-
-                if (useSpoutTexture)
-                {
-                    r.material.mainTexture = spoutTexture;
-				}
-                else
-                {
-                    r.material.mainTexture = null;
-				}
-
+                material.color = meshColor;
+                material.mainTexture = useSpoutTexture ? spoutTexture : null;
             }
 
-            Light[] lights = GetComponentsInChildren<Light>();
+            float lightValue = Unity.Mathematics.math.remap(0, 1, 0, 1000, lightIntensity);
+            GetComponentsInChildren(lights);
             foreach (Light l in lights)
             {
-                l.intensity = Unity.Mathematics.math.remap(0, 1, 0, 1000, lightIntensity);
+                l.intensity = lightValue;
                 l.shadowStrength = 1;
                 l.color = color;
             }
 
+        }
+
+        // The gradients only depend on these parameters : rebuilt and sent to the VFX when one of them changes
+        void updateGradients()
+        {
+            if (gradientsSent && colorOverLife != null && colorOverSpeed != null
+                && color == sentColor && colorLife == sentColorLife && colorSpeed == sentColorSpeed
+                && colorLifeRange == sentColorLifeRange && colorSpeedRange == sentColorSpeedRange && hdrMultiplier == sentHdrMultiplier)
+                return;
+
+            if (colorOverLife == null) colorOverLife = new Gradient();
+            if (colorOverSpeed == null) colorOverSpeed = new Gradient();
+            setGradientKeys(colorOverLife, color, colorLife, 0, 1, 0, colorLifeRange);
+            setGradientKeys(colorOverSpeed, Color.black, colorSpeed, 1, 1, (1 - colorSpeedRange), 1);
+            vfx.SetGradient(colorOverLifeID, colorOverLife);
+            vfx.SetGradient(colorOverSpeedID, colorOverSpeed);
+
+            gradientsSent = true;
+            sentColor = color;
+            sentColorLife = colorLife;
+            sentColorSpeed = colorSpeed;
+            sentColorLifeRange = colorLifeRange;
+            sentColorSpeedRange = colorSpeedRange;
+            sentHdrMultiplier = hdrMultiplier;
+        }
+
+        void setEmitterColor(Texture2D texture)
+        {
+            if (texture == emitterColorTexture) return;
+            setColor(texture, "Emitter Color");
+            emitterColorTexture = texture;
         }
 
         // Infinite particles are ranked 1..infiniteCount in the VFX (InfiniteLifeInit/Update.hlsl).
@@ -549,21 +601,28 @@ namespace Oxipital
 
             foreach (var b in forceBuffers)
             {
-                if (!vfx.HasGraphicsBuffer(b.Key))
+                if (!forceBufferIDs.TryGetValue(b.Key, out var ids))
                 {
-                    Debug.LogWarning(b.Key + " not found in VFX");
+                    ids = (Shader.PropertyToID(b.Key), Shader.PropertyToID(b.Key + "B"));
+                    forceBufferIDs[b.Key] = ids;
+                }
+
+                // Missing slots are reported once per orb group instead of every frame
+                if (!vfx.HasGraphicsBuffer(ids.buffer))
+                {
+                    if (missingForceBuffers.Add(b.Key)) Debug.LogWarning(b.Key + " not found in VFX");
                     continue;
                 }
 
-                vfx.SetGraphicsBuffer(b.Key, b.Value);
+                vfx.SetGraphicsBuffer(ids.buffer, b.Value);
 
-                if (!vfx.HasGraphicsBuffer(b.Key + "B"))
+                if (!vfx.HasGraphicsBuffer(ids.bufferB))
                 {
-                    Debug.LogWarning("B Buffer " + b.Key + " not found in VFX");
+                    if (missingForceBuffers.Add(b.Key + "B")) Debug.LogWarning("B Buffer " + b.Key + " not found in VFX");
                     continue;
                 }
 
-                vfx.SetGraphicsBuffer(b.Key + "B", b.Value);
+                vfx.SetGraphicsBuffer(ids.bufferB, b.Value);
             }
 
             //Update intensity here as we need to pass it outside the GraphicsBuffer
@@ -629,7 +688,7 @@ namespace Oxipital
             base.kill(time);
             infiniteLife = false; // infinite particles go back to a normal life and fade out
             if (vfx == null) return;
-            vfx.SetFloat("Emitter Intensity", 0);
+            vfx.SetFloat(emitterIntensityID, 0);
             count = 0;
         }
 
@@ -656,23 +715,27 @@ namespace Oxipital
 
         public Gradient CreateGradient(Color colorA, Color colorB, float alphaKeyA, float alphaKeyB, float timeA, float timeB)
         {
+			Gradient result = new Gradient();
+            setGradientKeys(result, colorA, colorB, alphaKeyA, alphaKeyB, timeA, timeB);
+            return result;
+        }
+
+        // Fills an existing gradient (the key arrays are reused, SetKeys copies them)
+        void setGradientKeys(Gradient gradient, Color colorA, Color colorB, float alphaKeyA, float alphaKeyB, float timeA, float timeB)
+        {
             if (timeA == 0)
                 timeA = 0.001f;
 
-			Gradient result = new Gradient();
-            GradientColorKey[] colorKeys = new GradientColorKey[2];
-            colorKeys[0].color = colorA * (float)Math.Pow(2,hdrMultiplier*5);
-            colorKeys[0].time = timeA;
-            colorKeys[1].color = colorB * (float)Math.Pow(2, hdrMultiplier * 5);
-            colorKeys[1].time = timeB;
-            GradientAlphaKey[] alphaKeys = new GradientAlphaKey[2];
-            alphaKeys[0].alpha = alphaKeyA;
-            alphaKeys[0].time = timeA;
-            alphaKeys[1].alpha = alphaKeyB;
-            alphaKeys[1].time = timeB;
-            result.SetKeys(colorKeys, alphaKeys);
-
-            return result;
+            float hdr = (float)Math.Pow(2, hdrMultiplier * 5);
+            gradientColorKeys[0].color = colorA * hdr;
+            gradientColorKeys[0].time = timeA;
+            gradientColorKeys[1].color = colorB * hdr;
+            gradientColorKeys[1].time = timeB;
+            gradientAlphaKeys[0].alpha = alphaKeyA;
+            gradientAlphaKeys[0].time = timeA;
+            gradientAlphaKeys[1].alpha = alphaKeyB;
+            gradientAlphaKeys[1].time = timeB;
+            gradient.SetKeys(gradientColorKeys, gradientAlphaKeys);
         }
 
         public Texture2D LoadTextureFromPath(string path)

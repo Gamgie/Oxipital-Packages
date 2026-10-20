@@ -8,7 +8,8 @@ namespace Oxipital
     {
         override protected List<Vector3> getPatternPositions<T>(DancerGroup<T> group)
         {
-            List<Vector3> positions = new List<Vector3>();
+            List<Vector3> positions = positionsCache;
+            positions.Clear();
 
             int fullDancerCount = group.getFullDancersCount(); //count of full dancers
             int dancerCount = group.items.Count; //count of all dancers, potential one more than full if count is not a whole number

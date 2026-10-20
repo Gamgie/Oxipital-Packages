@@ -40,6 +40,11 @@ tooling: everything is checked inside the Unity Editor of the Oxipital-Engine pr
   name, namespace or assembly needs `[MovedFrom]` so existing scenes still find it.
 - Releasing: bump `version` in both `package.json`, commit, then tag the commit `vX.Y.Z` (one tag covers both
   packages). Projects pick it up by changing `#vX.Y.Z` in their manifest.
+- **No allocation in per-frame code** (`Update`, `LateUpdate`, `FixedUpdate`): the show runs at 60 FPS with
+  almost no margin. Use `Shader.PropertyToID` instead of property names, reuse lists and arrays
+  (`GetComponentsInChildren(list)`), never read `gameObject.name` or attributes per frame, and send values to a VFX
+  only when they change when that is costly (gradients, textures). Measured on 2026-10-20: these rules took the
+  orb and force group scripts from about 2.6 ms and 104 KB of garbage per frame to about 0.4 ms and none.
 
 ## Architecture
 
@@ -66,8 +71,9 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
   per-dancer state (position, rotation, intensity, size) plus group-level fields into a single `GraphicsBuffer`
   that's fed straight into a VFX Graph as a Structured Buffer.
   - Group-level float fields destined for that buffer are marked with `[InBuffer(index)]`
-    (`Core/Runtime/Scripts/Ballet/InBufferAttribute.cs`); `DancerGroup` uses reflection over these attributes to
-    pack the buffer layout (`initBufferAndFieldInfoList` / `getList`). When adding a new buffer-exposed field on
+    (`Core/Runtime/Scripts/Ballet/InBufferAttribute.cs`). `InBufferLayout` (same file) reads these attributes once
+    per type and compiles a getter per field; each frame `DancerGroup.fillBufferData` writes the values into a
+    reused float array, without reflection nor allocation. When adding a new buffer-exposed field on
     an `OrbGroup`/`DancerGroup` subclass, give it the next free `InBuffer` index and keep `DANCER_DATA_SIZE`
     (per-dancer floats) and the VFX Graph's buffer-reading nodes in sync.
     - Indices are field slots, not field counts: a `Vector3`/`Color` takes 3 consecutive slots (e.g. `emitterScale`

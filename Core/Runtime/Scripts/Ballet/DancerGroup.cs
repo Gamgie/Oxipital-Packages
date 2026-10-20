@@ -64,8 +64,11 @@ namespace Oxipital
 
 		public GraphicsBuffer buffer;
 
-		Dictionary<int, FieldInfo> fieldInfos;
+		InBufferLayout layout;
 		int groupFixedDataSize;
+		// Filled each frame and uploaded to the buffer (reused, so nothing is allocated per frame)
+		float[] bufferData;
+		Func<int, object> customValue;
 
 
 		public AnimationCurve countDeadZone;
@@ -99,27 +102,10 @@ namespace Oxipital
 
 		internal void initBufferAndFieldInfoList()
 		{
-			fieldInfos = new Dictionary<int, FieldInfo>();
-
-			Type type = getGroupType();
-
-			// Prepare fieldInfo list. It will be used to populate buffer later.
-			// This is where we use custom attribute InBuffer to store at the right index the field in dictionary.
-			int lastGroupFloatIndex = 0;
-			foreach (FieldInfo f in type.GetFields())
-			{
-				InBuffer inBufferAttribute = f.GetCustomAttribute<InBuffer>();
-				if (inBufferAttribute == null) continue;
-
-				fieldInfos[inBufferAttribute.index] = f;
-
-				int fieldNumFloats = 1;
-				if (f.FieldType == typeof(Vector3)) fieldNumFloats = 3;
-				if (f.FieldType == typeof(Vector4)) fieldNumFloats = 4;
-				if (f.FieldType == typeof(Color)) fieldNumFloats = 3;
-				// Max : buffer size must not depend on the field declaration order
-				lastGroupFloatIndex = Mathf.Max(lastGroupFloatIndex, inBufferAttribute.index + fieldNumFloats);
-			}
+			// The [InBuffer] fields of the group type, analyzed once per type (see InBufferLayout)
+			layout = InBufferLayout.Get(getGroupType());
+			if (customValue == null) customValue = getBufferValueAtIndex;
+			int lastGroupFloatIndex = layout.GroupFloatCount;
 
 			if (buffer == null || !buffer.IsValid())
 			{
@@ -137,6 +123,7 @@ namespace Oxipital
 					+ MAX_DANCERS * DANCER_DATA_SIZE;
 
 				buffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxBufferSize, Marshal.SizeOf(typeof(float)));
+				bufferData = new float[maxBufferSize];
 			}
 		}
 
@@ -206,105 +193,48 @@ namespace Oxipital
 			}
 
 			//Update buffer with new data
-			buffer.SetData(getList());
+			int count = fillBufferData();
+			buffer.SetData(bufferData, 0, 0, count);
 		}
 
 		//Helpers
 		protected virtual Type getGroupType() { return GetType(); }
 
-		float[] getList()
+		// Fills bufferData (same layout as the buffer) and returns the number of floats to upload
+		int fillBufferData()
 		{
 			int indexOffset = 2; // first 2 are dancer count and group start index
-			float[] list = new float[indexOffset + groupFixedDataSize + items.Count * DANCER_DATA_SIZE];
+			int count = indexOffset + groupFixedDataSize + items.Count * DANCER_DATA_SIZE;
+			Array.Clear(bufferData, 0, count);
 
 			int itemsStartIndex = indexOffset + groupFixedDataSize - 1;
 
 			// Dancer Count
-			list[0] = items.Count;
+			bufferData[0] = items.Count;
 			// Dancer Start Index
-			list[1] = itemsStartIndex;
+			bufferData[1] = itemsStartIndex;
 
 			//fill fixed data
-			foreach (var f in fieldInfos)
-			{
-				if (f.Value == null) continue;
-				int index = f.Key + indexOffset;
-
-				object val;
-
-				if (f.Value.GetCustomAttribute<InBuffer>().useCustomFunc)
-
-					val = getBufferValueAtIndex(index);
-				else
-					val = f.Value.GetValue(this);
-
-
-				if (f.Value.FieldType == typeof(Vector3))
-				{
-					Vector3 v = (Vector3)val;
-					list[index] = v.x;
-					list[index + 1] = v.y;
-					list[index + 2] = v.z;
-				}
-				else if (f.Value.FieldType == typeof(Vector4))
-				{
-					Vector4 v = (Vector4)val;
-					list[index] = v.x;
-					list[index + 1] = v.y;
-					list[index + 2] = v.z;
-					list[index + 3] = v.w;
-				}
-				else if (f.Value.FieldType == typeof(Color))
-				{
-					Color v = (Color)val;
-					list[index] = v.r;
-					list[index + 1] = v.g;
-					list[index + 2] = v.b;
-
-				}
-				else if (f.Value.FieldType == typeof(Single))
-				{
-					var fVal = val;
-					list[index] = (float)fVal;
-				}
-				else if (f.Value.FieldType == typeof(Boolean))
-				{
-					list[index] = (bool)val ? 1 : 0;
-				}
-				else if (f.Value.FieldType == typeof(float))
-				{
-					list[index] = (float)val;
-				}
-				else if (f.Value.FieldType == typeof(int))
-				{
-					list[index] = (int)val;
-				}
-				else if (f.Value.FieldType == typeof(double))
-				{
-					list[index] = (float)(double)val;
-				}
-				else if (f.Value.FieldType.BaseType == typeof(Enum))
-				{
-					list[index] = (float)(int)val;
-
-				}
-			}
+			layout.Write(this, bufferData, indexOffset, customValue);
 
 			//fill dancer data
 			for (int i = 0; i < items.Count; i++)
 			{
 				Dancer d = items[i];
-				list[itemsStartIndex + i * DANCER_DATA_SIZE] = d.transform.position.x;
-				list[itemsStartIndex + i * DANCER_DATA_SIZE + 1] = d.transform.position.y;
-				list[itemsStartIndex + i * DANCER_DATA_SIZE + 2] = d.transform.position.z;
-				list[itemsStartIndex + i * DANCER_DATA_SIZE + 3] = d.targetRotation.eulerAngles.x;
-				list[itemsStartIndex + i * DANCER_DATA_SIZE + 4] = d.targetRotation.eulerAngles.y;
-				list[itemsStartIndex + i * DANCER_DATA_SIZE + 5] = d.targetRotation.eulerAngles.z;
-				list[itemsStartIndex + i * DANCER_DATA_SIZE + 6] = d.intensity;
-				list[itemsStartIndex + i * DANCER_DATA_SIZE + 7] = d.size;
+				int start = itemsStartIndex + i * DANCER_DATA_SIZE;
+				Vector3 position = d.transform.position;
+				Vector3 rotation = d.targetRotation.eulerAngles;
+				bufferData[start] = position.x;
+				bufferData[start + 1] = position.y;
+				bufferData[start + 2] = position.z;
+				bufferData[start + 3] = rotation.x;
+				bufferData[start + 4] = rotation.y;
+				bufferData[start + 5] = rotation.z;
+				bufferData[start + 6] = d.intensity;
+				bufferData[start + 7] = d.size;
 			}
 
-			return list;
+			return count;
 		}
 
 		public override float getCount()

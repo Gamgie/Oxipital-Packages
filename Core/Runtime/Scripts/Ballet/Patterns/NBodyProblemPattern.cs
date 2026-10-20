@@ -14,7 +14,8 @@ namespace Oxipital
         // Start is called before the first frame update
         override protected List<Vector3> getPatternPositions<T>(DancerGroup<T> group)
         {
-            List<Vector3> positions = new List<Vector3>();
+            List<Vector3> positions = positionsCache;
+            positions.Clear();
 
             for (int i = 0; i < group.items.Count; i++)
             {
