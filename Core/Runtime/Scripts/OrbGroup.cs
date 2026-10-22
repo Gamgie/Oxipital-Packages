@@ -174,7 +174,8 @@ namespace Oxipital
         public float infiniteCount = 0; // infinite particles spawned and kept (particles with infiniteRank > infiniteCount are killed)
 
         public enum EmitterShape { Sphere, Plane, Torus, Cube, Pipe, Egg, Line, Circle, Merkaba, Pyramid, Custom, Augmenta }
-        public enum RenderType { UnlitOpaque, UnlitAdditive, LitQuad, LitMesh }
+        // Lit types are drawn by the single Lit Mesh output of OrbVFX: meshIndex = renderType - LitCube (mesh0 cube, mesh1 sphere, mesh2 "Particle Mesh")
+        public enum RenderType { UnlitOpaque, UnlitAdditive, LitCube, LitSphere, LitMesh }
 
         [InBuffer(3)]
         public EmitterShape emitterShape;
@@ -334,6 +335,10 @@ namespace Oxipital
         Mesh currentMesh;
         internal VisualEffect vfx;
 
+        internal Mesh particleMesh; // set by OrbManager, drawn by the LitMesh render type
+        Mesh sentParticleMesh;
+        static readonly int particleMeshID = Shader.PropertyToID("Particle Mesh");
+
         //PCLToGraphicsBuffer pclGraphics;
 
         private bool textureLoaded = false;
@@ -397,6 +402,7 @@ namespace Oxipital
             vfx.SetFloat(emitterIntensityID, isDying || infiniteLife ? 0 : dancerIntensity);
             vfx.SetGraphicsBuffer(orbBufferID, buffer);
             updateGradients();
+            updateParticleMesh();
             vfx.SetVector3(sourcePositionID, transform.position);
 
 			foreach (var item in items) item.debugColor = color;
@@ -551,6 +557,15 @@ namespace Oxipital
             sentColorLifeRange = colorLifeRange;
             sentColorSpeedRange = colorSpeedRange;
             sentHdrMultiplier = hdrMultiplier;
+        }
+
+        // Sent to the VFX only when it changes ; without mesh the VFX keeps its default one (the sphere)
+        void updateParticleMesh()
+        {
+            if (particleMesh == sentParticleMesh) return;
+            if (particleMesh != null) vfx.SetMesh(particleMeshID, particleMesh);
+            else vfx.ResetOverride(particleMeshID);
+            sentParticleMesh = particleMesh;
         }
 
         void setEmitterColor(Texture2D texture)

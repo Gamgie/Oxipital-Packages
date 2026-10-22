@@ -78,7 +78,7 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
     (per-dancer floats) and the VFX Graph's buffer-reading nodes in sync.
     - Indices are field slots, not field counts: a `Vector3`/`Color` takes 3 consecutive slots (e.g. `emitterScale`
       at 32 uses 32–34). Inserting a field in the middle shifts every later index, so every graph read of
-      "Orb Buffer" (`OrbVFX.vfx`, `OxipitalInit/Update/OutputLit/OutputQuadUnlit`, `StandardForce`,
+      "Orb Buffer" (`OrbVFX.vfx`, `OxipitalInit/Update/OutputLit/OutputQuadUnlit/OutputMesh`, `StandardForce`,
       `PositionColorSpawn`) and the `ORB_*` defines in `Core/Runtime/VFX/Shaders/OxipitalHelpers.hlsl` must be
       shifted too — prefer appending at the next free index instead.
     - The buffer starts with a 2-float header (dancer count, dancer start index). In the graphs, an orb field is
@@ -98,6 +98,14 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
   - Emitter shapes: Unity only reads `StreamingAssets` from the project's `Assets`, so the basic shapes ship in
     `Core/Emitters~` and `Core/Editor/EmitterInstaller.cs` copies them into the project (automatically when the
     project has no `emitters` folder yet, or from the menu *Oxipital > Installer les émetteurs de base*).
+  - **Render types** (`OrbGroup.renderType`, `[InBuffer(24)]`): `UnlitOpaque` and `UnlitAdditive` each have a quad
+    output in `OrbVFX.vfx` (block `OxipitalOutputQuadUnlit`, its "Render Type Index" keeps only its type).
+    `LitCube`, `LitSphere` and `LitMesh` share ONE HDRP Lit Mesh output (block `OxipitalOutputMesh`): it keeps
+    render types >= 2 and sets `meshIndex = renderType - 2` (mesh0 built-in cube, mesh1 `VFX/Meshes/OrbIcosphere`
+    of 80 triangles, mesh2 the exposed "Particle Mesh", set from `OrbManager.particleMesh` in the Inspector).
+    Each grain gets a fixed random rotation. The output casts shadows and uses compute culling, so the particles
+    of a group in another render type are culled before being drawn. A new render type goes at the END of
+    the enum (Unity serializes the index; the Chataigne module lists the values).
   - **Infinite life mode** (`OrbGroup.infiniteLife`, `Core/Runtime/VFX/Shaders/InfiniteLifeInit.hlsl` /
     `InfiniteLifeUpdate.hlsl`): particles never die and the dancer intensity sets the particle count
     (`intensity × maxInfiniteParticles`) instead of the spawn rate. The rate spawner is stopped
