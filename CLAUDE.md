@@ -102,7 +102,7 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
     output in `OrbVFX.vfx` (block `OxipitalOutputQuadUnlit`, its "Render Type Index" keeps only its type).
     `LitCube`, `LitSphere` and `LitMesh` share ONE HDRP Lit Mesh output (block `OxipitalOutputMesh`): it keeps
     render types >= 2 and sets `meshIndex = renderType - 2` (mesh0 built-in cube, mesh1 `VFX/Meshes/OrbIcosphere`
-    of 80 triangles, mesh2 the exposed "Particle Mesh", set from `OrbManager.particleMesh` in the Inspector).
+    of 80 triangles, mesh2 the exposed "Particle Mesh", set from `OrbGroup.particleMesh` in the Inspector, one per group).
     Each grain gets a fixed random rotation. The output casts shadows and uses compute culling, so the particles
     of a group in another render type are culled before being drawn. A new render type goes at the END of
     the enum (Unity serializes the index; the Chataigne module lists the values).

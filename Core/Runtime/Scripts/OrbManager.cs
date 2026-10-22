@@ -10,18 +10,8 @@ namespace Oxipital
         
         public float firstItemIntensity = .5f;
 
-        // Mesh drawn by the LitMesh render type in every orb group (none : the sphere of the VFX)
-        [OSCQuery.DoNotExpose]
-        public Mesh particleMesh;
-
         OrbManager() : base("Orb Group")
         {
-        }
-
-        override protected void Update()
-        {
-            base.Update();
-            foreach (OrbGroup orbGroup in items) if (orbGroup != null) orbGroup.particleMesh = particleMesh;
         }
 
         protected override OrbGroup addItem()

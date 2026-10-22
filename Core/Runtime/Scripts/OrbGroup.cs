@@ -259,6 +259,10 @@ namespace Oxipital
         [InBuffer(24)]
         public RenderType renderType = RenderType.UnlitAdditive;
 
+        // Mesh drawn by the LitMesh render type (none : the sphere of the VFX)
+        [OSCQuery.DoNotExpose]
+        public Mesh particleMesh;
+
         [InBuffer(25)]
         [Range(0, 1)]
         public float meshOpacity = 0;
@@ -335,7 +339,6 @@ namespace Oxipital
         Mesh currentMesh;
         internal VisualEffect vfx;
 
-        internal Mesh particleMesh; // set by OrbManager, drawn by the LitMesh render type
         Mesh sentParticleMesh;
         static readonly int particleMeshID = Shader.PropertyToID("Particle Mesh");
 
