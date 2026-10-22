@@ -104,7 +104,12 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
     render types >= 2 and sets `meshIndex = renderType - 2` (mesh0 built-in cube, mesh1 `VFX/Meshes/OrbIcosphere`
     of 80 triangles, mesh2 the exposed "Particle Mesh", set from `OrbGroup.particleMesh` in the Inspector, one per group).
     Each grain gets a fixed random rotation. The output casts shadows and uses compute culling, so the particles
-    of a group in another render type are culled before being drawn. A new render type goes at the END of
+    of a group in another render type are culled before being drawn.
+    - Cost is driven by vertices per grain, drawn once per pass (depth, color, each shadow cascade). Measured on a
+      laptop RTX 3060, 348 k grains at 1080p: cube (24 vertices) 44 ms GPU, icosphere (42) 122 ms, smooth
+      octahedron (6) about 21 ms; each sun shadow cascade adds about 9 ms, the shadow map resolution nothing.
+      `VFX/Meshes/OrbOctahedron` (6 vertices, smooth normals, same apparent size as the cube) is the cheap grain
+      to put in Particle Mesh. A new render type goes at the END of
     the enum (Unity serializes the index; the Chataigne module lists the values).
   - **Infinite life mode** (`OrbGroup.infiniteLife`, `Core/Runtime/VFX/Shaders/InfiniteLifeInit.hlsl` /
     `InfiniteLifeUpdate.hlsl`): particles never die and the dancer intensity sets the particle count

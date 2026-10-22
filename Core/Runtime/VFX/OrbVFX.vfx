@@ -89,8 +89,8 @@ MonoBehaviour:
       serializedVersion: 2
       x: -310
       y: -1030
-      width: 1829
-      height: 6046
+      width: 1867
+      height: 6387
     contents:
     - model: {fileID: 114023846229194376}
       id: 0
@@ -227,6 +227,9 @@ MonoBehaviour:
     - model: {fileID: 8926484042661616544}
       id: 0
       isStickyNote: 0
+    - model: {fileID: 8926484042661614721}
+      id: 12
+      isStickyNote: 0
   stickyNoteInfos: []
   categories:
   - name: Orb
@@ -237,8 +240,8 @@ MonoBehaviour:
     serializedVersion: 2
     x: -310
     y: -1030
-    width: 2551
-    height: 6593
+    width: 2465
+    height: 6521
 --- !u!114 &114350483966674976
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -306,22 +309,6 @@ MonoBehaviour:
   m_CustomAttributes:
   - {fileID: 8926484042661616600}
   m_ParameterInfo:
-  - name: Particle Mesh
-    path: Particle Mesh
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_NamedObject
-    realType: Mesh
-    defaultValue:
-      m_Type:
-        m_SerializableType: UnityEngine.Mesh, UnityEngine.CoreModule, Version=0.0.0.0,
-          Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"obj":{"fileID":4300000,"guid":"ef7bf3487167579468345f3cc54d798e","type":2}}'
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
   - name: Camera Position
     path: Camera Position
     tooltip: 
@@ -414,6 +401,22 @@ MonoBehaviour:
         m_SerializableType: UnityEngine.Vector4, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
       m_SerializableObject: '{"x":0.0,"y":0.0,"z":0.0,"w":0.0}'
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: Particle Mesh
+    path: Particle Mesh
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_NamedObject
+    realType: Mesh
+    defaultValue:
+      m_Type:
+        m_SerializableType: UnityEngine.Mesh, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+      m_SerializableObject: '{"obj":{"fileID":4300000,"guid":"ef7bf3487167579468345f3cc54d798e","type":2}}'
     min: -Infinity
     max: Infinity
     enumValues: []
@@ -1911,6 +1914,8 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614722}
       inputSlot: {fileID: 8926484042661616113}
+    - outputSlot: {fileID: 8926484042661614722}
+      inputSlot: {fileID: 8926484042661616624}
     position: {x: 761, y: 4655}
     expandedSlots: []
     expanded: 1
@@ -1961,7 +1966,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614722}
       inputSlot: {fileID: 8926484042661616606}
-    position: {x: 250, y: 2600}
+    position: {x: 112, y: 4344}
     expandedSlots: []
     expanded: 0
     supecollapsed: 0
@@ -2440,6 +2445,8 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614983}
       inputSlot: {fileID: 8926484042661616114}
+    - outputSlot: {fileID: 8926484042661614983}
+      inputSlot: {fileID: 8926484042661616625}
     position: {x: 741, y: 4748}
     expandedSlots: []
     expanded: 1
@@ -7632,7 +7639,7 @@ MonoBehaviour:
   m_Parent: {fileID: 114350483966674976}
   m_Children:
   - {fileID: 8926484042661616112}
-  m_UIPosition: {x: 1070, y: 4465}
+  m_UIPosition: {x: 1108, y: 4899}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots:
@@ -8091,6 +8098,8 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661616135}
       inputSlot: {fileID: 8926484042661616145}
+    - outputSlot: {fileID: 8926484042661616135}
+      inputSlot: {fileID: 8926484042661616631}
     position: {x: 741, y: 4831}
     expandedSlots: []
     expanded: 1
@@ -8182,6 +8191,8 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661616137}
       inputSlot: {fileID: 8926484042661616144}
+    - outputSlot: {fileID: 8926484042661616137}
+      inputSlot: {fileID: 8926484042661616632}
     position: {x: 725, y: 4923}
     expandedSlots: []
     expanded: 1
@@ -15448,7 +15459,7 @@ MonoBehaviour:
   m_Parent: {fileID: 114350483966674976}
   m_Children:
   - {fileID: 8926484042661616623}
-  m_UIPosition: {x: 1670, y: 4465}
+  m_UIPosition: {x: 1731, y: 4470}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots:
@@ -15757,7 +15768,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Mesh, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"obj":{"fileID":10208,"guid":"0000000000000000e000000000000000","type":0}}'
+      m_SerializableObject: '{"obj":{"fileID":4300000,"guid":"ef7bf3487167579468345f3cc54d798e","type":2}}'
     m_Space: -1
   m_Property:
     name: mesh2
@@ -15836,7 +15847,7 @@ MonoBehaviour:
   m_UIIgnoredErrors: []
   m_Parent: {fileID: 114350483966674976}
   m_Children: []
-  m_UIPosition: {x: 1320, y: 4615}
+  m_UIPosition: {x: 0, y: 0}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots: []
@@ -15844,7 +15855,7 @@ MonoBehaviour:
   - {fileID: 8926484042661616622}
   m_ExposedName: Particle Mesh
   m_Exposed: 1
-  m_Order: 0
+  m_Order: 25
   m_Category: 
   m_Min:
     m_Type:
@@ -15858,7 +15869,15 @@ MonoBehaviour:
   m_EnumValues: []
   m_ValueFilter: 0
   m_Tooltip: 
-  m_Nodes: []
+  m_Nodes:
+  - m_Id: 0
+    linkedSlots:
+    - outputSlot: {fileID: 8926484042661616622}
+      inputSlot: {fileID: 8926484042661616617}
+    position: {x: 1320, y: 4615}
+    expandedSlots: []
+    expanded: 1
+    supecollapsed: 0
 --- !u!114 &8926484042661616622
 MonoBehaviour:
   m_ObjectHideFlags: 0
