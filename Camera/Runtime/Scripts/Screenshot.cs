@@ -23,14 +23,24 @@ namespace Oxipital
 
         private void Update()
         {
+            // The key shortcut needs the legacy Input Manager : in a project set to the Input System only,
+            // reading UnityEngine.Input throws every frame. TakeScreenshot() stays callable (Chataigne).
+#if ENABLE_LEGACY_INPUT_MANAGER
             if (Input.GetKeyUp(takeScreenshotKeyCode))
             {
                 TakeScreenshot();
             }
+#endif
         }
 
         public void TakeScreenshot()
         {
+            if (string.IsNullOrEmpty(filepath))
+            {
+                Debug.LogWarning("Screenshot : set a folder in filepath to capture screenshots");
+                return;
+            }
+
             string newScreenCaptureName = filepath + "\\" + filename + "." + fileIndex + ".png";
 
             while (File.Exists(newScreenCaptureName))
@@ -58,6 +68,10 @@ namespace Oxipital
         void FileIndexSetup()
         {
             fileIndex = 0;
+
+            // No folder set (the prefab ships without one) : nothing to index
+            if (string.IsNullOrEmpty(filepath))
+                return;
 
             string screenCaptureFileName = filepath + "\\" + filename + ".";
 

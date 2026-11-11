@@ -38,6 +38,13 @@ tooling: everything is checked inside the Unity Editor of the Oxipital-Engine pr
   Chataigne automatically: keep new internal state private or mark it `[OSCQuery.DoNotExpose]`.
 - A `[SerializeReference]` type (e.g. `OxiSplatPass`, stored by type name in a CustomPassVolume) that changes
   name, namespace or assembly needs `[MovedFrom]` so existing scenes still find it.
+- **A prefab must work when dropped alone in an empty scene of another project.** References set only on scene
+  objects in Oxipital-Engine do not travel with the package: `Cameras.prefab` shipped in 1.1.0 with four of them
+  empty (the cameras' `virtualCamera`, `CameraController.camera` and `cinemachineBrain`). No machine path either
+  (`Screenshot.filepath` is left empty in the prefab, each project sets its own folder).
+- **Wrap legacy `UnityEngine.Input` reads in `#if ENABLE_LEGACY_INPUT_MANAGER`.** A project set to the Input System
+  only throws on every such read (see `Screenshot.cs`). `MouseOrbitImproved` and `OpticalFlowTestSource` still read
+  it unguarded: they are in no prefab.
 - Releasing: bump `version` in both `package.json`, commit, then tag the commit `vX.Y.Z` (one tag covers both
   packages). Projects pick it up by changing `#vX.Y.Z` in their manifest.
 - **No allocation in per-frame code** (`Update`, `LateUpdate`, `FixedUpdate`): the show runs at 60 FPS with

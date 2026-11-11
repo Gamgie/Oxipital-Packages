@@ -49,7 +49,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderMainWindow: 1
   lookAtTarget: {fileID: 6057321336191732691}
-  camera: {fileID: 0}
+  camera: {fileID: 4592129141062553480}
+  cinemachineBrain: {fileID: 5971014947273459008}
   orthographic: 0
   fov: 75
   orthoSize: 2
@@ -231,7 +232,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 689898a44c979124092ea5776f3d62e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  virtualCamera: {fileID: 0}
+  virtualCamera: {fileID: 4829965933851890305}
   type: 0
   rotateYSpeed: 0
   rotateXSpeed: 0
@@ -520,7 +521,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 964c778ccdaa2c640943d807396e7c1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  filepath: D:\Gamgie\Projets\Oxipital\Unity\Screen Capture
+  filepath: 
   filename: Oxipital
   supersize: 5
   takeScreenshotKeyCode: 13
@@ -618,7 +619,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eaa03955dd46e6343b6be006a87f0a3d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  virtualCamera: {fileID: 0}
+  virtualCamera: {fileID: 716488663967364067}
   type: 1
   manualControl: 0
   cameraPosition: {x: 0, y: 0, z: 0}
