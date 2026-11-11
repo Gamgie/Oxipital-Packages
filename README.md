@@ -23,8 +23,8 @@ Prérequis : Unity 6000.3 avec HDRP, et [Git LFS](https://git-lfs.com) installé
     { "name": "Keijiro", "url": "https://registry.npmjs.com", "scopes": ["jp.keijiro"] }
   ],
   "dependencies": {
-    "com.gamgie.oxipital.core": "https://github.com/Gamgie/Oxipital-Packages.git?path=/Core#v1.1.0",
-    "com.gamgie.oxipital.camera": "https://github.com/Gamgie/Oxipital-Packages.git?path=/Camera#v1.1.0",
+    "com.gamgie.oxipital.core": "https://github.com/Gamgie/Oxipital-Packages.git?path=/Core#v1.1.1",
+    "com.gamgie.oxipital.camera": "https://github.com/Gamgie/Oxipital-Packages.git?path=/Camera#v1.1.1",
     "org.nesnausk.gaussian-splatting": "https://github.com/aras-p/UnityGaussianSplatting.git?path=/package",
     "com.pfc.dome-tools": "0.8.1"
   }
@@ -40,7 +40,7 @@ Prérequis : Unity 6000.3 avec HDRP, et [Git LFS](https://git-lfs.com) installé
 
 ## Mettre à jour un projet
 
-Remplacer `#v1.1.0` par la nouvelle version dans les deux lignes du `manifest.json`. Un projet ne change jamais
+Remplacer `#v1.1.1` par la nouvelle version dans les deux lignes du `manifest.json`. Un projet ne change jamais
 de version tout seul : un spectacle déjà monté reste figé tant qu'on ne le décide pas.
 
 ## Modifier le moteur

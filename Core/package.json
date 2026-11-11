@@ -1,6 +1,6 @@
 {
   "name": "com.gamgie.oxipital.core",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "displayName": "Oxipital Core",
   "description": "Moteur de particules temps réel d'Oxipital : ballet d'orbes en VFX Graph, forces, mode vie infinie, flux optique, splats. Piloté en direct depuis Chataigne via OSCQuery.",
   "unity": "6000.3",
