@@ -42,6 +42,10 @@ namespace Oxipital
         public bool joinNearestPoint = true;
 
         [Header("Travel")]
+        [Tooltip("Place the camera by progress instead of speed: 0 = start of the spline, 1 = its end. Meant for a Timeline, where a position is easier to place than a speed. Speed and loop are then ignored.")]
+        public bool useProgress = false;
+        [Tooltip("Where the camera is along the spline, 0 = start, 1 = end. Drives the camera with useProgress; otherwise it shows the ride's progress.")]
+        [Range(0f, 1f)] public float progress;
         [Tooltip("Speed along the spline (m/s), negative = backwards.")]
         public float speed = 20f;
         [Tooltip("Seconds to reach a new speed.")]
@@ -118,7 +122,8 @@ namespace Oxipital
         ICameraGround _ground;
 
         bool _started, _groundReady, _flatReady;
-        float _speed;                       // smoothed speed
+        float _speed;                       // smoothed speed (by progress: measured)
+        float _direction = 1f;              // last direction of travel
         Vector3 _offset;                    // smoothed offset
         float _altitude;                    // smoothed altitude
         float _groundHeight;                // smoothed, anticipated ground height
@@ -287,13 +292,25 @@ namespace Oxipital
             float length = spline.Spline.GetLength();
             if (length <= 0f) return;
 
-            // ---- travel
-            _speed = Mathf.Lerp(_speed, speed, Damp(speedSmoothing, dt));
-            distance = Wrap(distance + _speed * dt, length);
+            // ---- travel: by progress (0..1 along the spline, for a Timeline) or by speed
+            float previous = distance;
+            if (useProgress)
+            {
+                distance = Mathf.Clamp01(progress) * length;
+                if (dt > 0f) _speed = (distance - previous) / dt;
+            }
+            else
+            {
+                _speed = Mathf.Lerp(_speed, speed, Damp(speedSmoothing, dt));
+                distance = Wrap(distance + _speed * dt, length);
+                progress = distance / length;
+            }
+            if (_speed > 1e-3f) _direction = 1f;
+            else if (_speed < -1e-3f) _direction = -1f;
+            float direction = _direction;
             float k = Damp(offsetSmoothing, dt);
             _offset = Vector3.Lerp(_offset, offset, k);
             _altitude = Mathf.Lerp(_altitude, altitude, k);
-            float direction = _speed < 0f ? -1f : 1f;
 
             Sample(distance, length, out Vector3 onSpline, out Quaternion splineRotation);
 

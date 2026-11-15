@@ -195,6 +195,9 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
   (not `FixedUpdate`: no physics, no 50 Hz judder), only while active; `CM Spline Camera` follows it exactly
   (CinemachineFollow LockToTarget, no position damping) and turns with it (`CinemachineRotateWithFollowTarget`,
   damping = `rotationDamping`), with the shared Perlin noise and the brain's blends.
+  - By progress (`useProgress`, 1.4.0): `progress` (0 = start of the spline, 1 = end) places the camera, speed and
+    loop are ignored; meant for a Timeline, where a position is easier to place than a speed. Riding by speed,
+    `progress` shows where the ride is.
   - Travel: `speed` (m/s, negative = backwards) eased by `speedSmoothing`; `offset` (x right, y up) and `altitude`
     eased by `offsetSmoothing`. Smoothing the inputs, not the output, keeps the camera exactly on the path at a
     steady speed (no lag). `distance` is written every frame and can be set to jump; `loop` wraps (a cut unless
