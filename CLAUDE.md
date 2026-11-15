@@ -199,15 +199,19 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
     eased by `offsetSmoothing`. Smoothing the inputs, not the output, keeps the camera exactly on the path at a
     steady speed (no lag). `distance` is written every frame and can be set to jump; `loop` wraps (a cut unless
     the spline is closed). Taking over from another camera, `joinNearestPoint` starts at the point nearest to it
-    and the speed eases in from 0.
+    and the speed eases in from 0, unless `ResetRide()` was called while another camera was shown: then
+    it starts at `startDistance` at full speed (a show scene can reset the ride, then switch to Spline).
   - Ground: a scene can hand an `ICameraGround` (`SetGround`): the height becomes ground + `altitude` + the
     spline's height above its container, the ground anticipated over `groundLookAhead` (rises before a hill, as
     the Soledad Act 2 flight did) and eased by `groundSmoothing`.
   - Rotation (`rotationMode`): `Spline` = aimed `aimAhead` metres ahead on the path (softer than the tangent),
     level unless `followPitch` / `followRoll` (spline up vectors and a `CinemachineSplineRoll` on the spline's
-    object), `bank` leans into turns; `SplineAndLook` = that plus a gamepad look offset (`yaw1D` / `pitch1D` /
-    `roll1D`, same signs as the Spaceship, rates eased by `lookSmoothing`, `lookRecenter` swings back,
-    `maxLookPitch`); `Free` = the gamepad alone, from the view it took over.
+    object), `bank` leans into turns; `SplineAndLook` = that plus a gamepad look (`yaw1D` / `pitch1D` / `roll1D`,
+    same signs as the Spaceship) that points the view like a head: full stick = `maxLookYaw` / `maxLookPitch` /
+    `maxLookRoll` from the path's view, released = back on the path (eased by `lookSmoothing`). It used to
+    integrate rates: a stick that never rests at exactly 0 then turned the view forever; `stickDeadzone` (0.1)
+    applies in both look modes. `Free` = the gamepad alone turns the camera at `yawSpeed` / `pitchSpeed` /
+    `rollSpeed`, from the view it took over.
   - Drift: brownian (3-octave simplex) wandering of position and view, seeded by `driftSeed` and timed by
     `Time.deltaTime`, so a Recorder render repeats (Cinemachine's Perlin noise reseeds at random each run).
 - `DomeCameraRigFollow` re-targets a dome rig transform to follow a camera target, compensating for the

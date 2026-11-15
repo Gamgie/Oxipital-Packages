@@ -78,22 +78,24 @@ namespace Oxipital
         [Range(0f, 5f)] public float rotationDamping = 0.5f;
 
         [Header("Look (gamepad, Spline And Look and Free)")]
-        [Tooltip("Turn right (+) or left (-).")]
+        [Tooltip("Right (+) or left (-).")]
         [Range(-1f, 1f)] public float yaw1D;
-        [Tooltip("Look up (+) or down (-).")]
+        [Tooltip("Up (+) or down (-).")]
         [Range(-1f, 1f)] public float pitch1D;
         [Tooltip("Roll right (+) or left (-).")]
         [Range(-1f, 1f)] public float roll1D;
-        [Tooltip("Turn speeds at full stick (degrees/s).")]
+        [Tooltip("Stick values below this count as centred (a gamepad at rest never sends exactly 0).")]
+        [Range(0f, 0.5f)] public float stickDeadzone = 0.1f;
+        [Tooltip("Seconds for the view to follow the sticks: softer starts and stops.")]
+        [Range(0f, 3f)] public float lookSmoothing = 0.4f;
+        [Tooltip("Spline And Look: the stick points the view, like turning the head. Full stick = these angles from the spline's view (degrees); released, the view comes back to the spline.")]
+        [Range(0f, 180f)] public float maxLookYaw = 120f;
+        [Range(0f, 89f)] public float maxLookPitch = 60f;
+        [Range(0f, 90f)] public float maxLookRoll = 30f;
+        [Tooltip("Free: the stick turns the camera, at these speeds at full stick (degrees/s).")]
         [Range(0f, 360f)] public float yawSpeed = 60f;
         [Range(0f, 360f)] public float pitchSpeed = 45f;
         [Range(0f, 360f)] public float rollSpeed = 45f;
-        [Tooltip("Seconds for a stick move to reach its full turn speed: softer starts and stops.")]
-        [Range(0f, 3f)] public float lookSmoothing = 0.4f;
-        [Tooltip("Spline And Look: seconds to swing back to the spline's view once a stick is released. 0 = the look stays.")]
-        [Range(0f, 20f)] public float lookRecenter = 0f;
-        [Tooltip("Spline And Look: highest look up or down from the spline's view (degrees).")]
-        [Range(0f, 89f)] public float maxLookPitch = 80f;
 
         [Header("Drift (brownian)")]
         [Tooltip("Wandering of the position around the ride (m).")]
@@ -118,8 +120,9 @@ namespace Oxipital
         float _groundHeight;                // smoothed, anticipated ground height
         Vector3 _flat;                      // last level travel direction
         float _turnRate;                    // smoothed, degrees/s
-        Vector3 _lookRate;                  // smoothed stick turn rates (degrees/s): yaw, pitch, roll
-        float _lookYaw, _lookPitch, _lookRoll;
+        Vector3 _lookRate;                  // Free: smoothed turn rates (degrees/s): yaw, pitch, roll
+        Vector3 _look;                      // Spline And Look: smoothed view angles from the spline's (degrees)
+        bool _resetPending;                 // ResetRide while another camera is shown: the next take-over starts there
         Quaternion _free = Quaternion.identity;
         float _driftTime;
         int _driftOffsetsSeed = int.MinValue;
@@ -153,9 +156,11 @@ namespace Oxipital
             _groundReady = false;
         }
 
-        /// <summary>Back to startDistance, at full speed.</summary>
+        /// <summary>Back to startDistance, at full speed. Called while another camera is shown, the switch to this
+        /// one starts there (instead of joining the nearest point).</summary>
         public void ResetRide()
         {
+            _resetPending = !_isActive;
             distance = startDistance;
             _speed = speed;
             _offset = offset;
@@ -169,7 +174,7 @@ namespace Oxipital
         /// <summary>Back to the spline's view (Spline And Look) and stop the turns.</summary>
         public void ResetLook()
         {
-            _lookYaw = _lookPitch = _lookRoll = 0f;
+            _look = Vector3.zero;
             _lookRate = Vector3.zero;
         }
 
@@ -188,9 +193,15 @@ namespace Oxipital
             // Called when this camera takes over: carry on from the previous camera's view
             _free = rotation;
             ResetLook();
-            _speed = 0f;
             _flatReady = false;
             _groundReady = false;
+            if (_resetPending)
+            {
+                // ResetRide was asked while another camera was shown: start the ride there, at full speed
+                _resetPending = false;
+                return;
+            }
+            _speed = 0f;
             if (joinNearestPoint && HasSpline())
             {
                 Transform t = spline.transform;
@@ -209,6 +220,13 @@ namespace Oxipital
         bool HasSpline() => spline != null && spline.Splines.Count > 0 && spline.Spline.Count >= 2;
 
         static float Damp(float seconds, float dt) => seconds <= 0f ? 1f : 1f - Mathf.Exp(-dt / seconds);
+
+        // Stick value past the deadzone, rescaled to -1..1
+        float Stick(float value)
+        {
+            float a = Mathf.Abs(Mathf.Clamp(value, -1f, 1f));
+            return a <= stickDeadzone ? 0f : Mathf.Sign(value) * (a - stickDeadzone) / Mathf.Max(1f - stickDeadzone, 1e-3f);
+        }
 
         // Distance along the spline, wrapped or clamped
         float Wrap(float d, float length) => loop ? Mathf.Repeat(d, length) : Mathf.Clamp(d, 0f, length);
@@ -310,33 +328,27 @@ namespace Oxipital
             }
             path *= Quaternion.AngleAxis(roll, Vector3.forward);
 
-            // ---- gamepad: smoothed turn rates
-            Vector3 stick = new Vector3(yaw1D * yawSpeed, pitch1D * pitchSpeed, roll1D * rollSpeed);
-            _lookRate = Vector3.Lerp(_lookRate, stick, Damp(lookSmoothing, dt));
+            // ---- gamepad (deadzone, then smoothed)
+            Vector3 stick = new Vector3(Stick(yaw1D), Stick(pitch1D), Stick(roll1D));
+            float lookK = Damp(lookSmoothing, dt);
 
             Quaternion rotation;
             switch (rotationMode)
             {
                 case RotationMode.Free:
+                    // The stick turns the camera (rates)
+                    _lookRate = Vector3.Lerp(_lookRate, Vector3.Scale(stick, new Vector3(yawSpeed, pitchSpeed, rollSpeed)), lookK);
                     _free = (_free * Quaternion.AngleAxis(_lookRate.x * dt, Vector3.up)
                                    * Quaternion.AngleAxis(-_lookRate.y * dt, Vector3.right)
                                    * Quaternion.AngleAxis(-_lookRate.z * dt, Vector3.forward)).normalized;
                     rotation = _free;
                     break;
                 case RotationMode.SplineAndLook:
-                    _lookYaw = Mathf.DeltaAngle(0f, _lookYaw + _lookRate.x * dt);
-                    _lookPitch = Mathf.Clamp(_lookPitch + _lookRate.y * dt, -maxLookPitch, maxLookPitch);
-                    _lookRoll = Mathf.DeltaAngle(0f, _lookRoll + _lookRate.z * dt);
-                    if (lookRecenter > 0f)
-                    {
-                        float back = Damp(lookRecenter, dt);
-                        if (Mathf.Abs(yaw1D) < 0.05f) _lookYaw = Mathf.Lerp(_lookYaw, 0f, back);
-                        if (Mathf.Abs(pitch1D) < 0.05f) _lookPitch = Mathf.Lerp(_lookPitch, 0f, back);
-                        if (Mathf.Abs(roll1D) < 0.05f) _lookRoll = Mathf.Lerp(_lookRoll, 0f, back);
-                    }
-                    rotation = path * Quaternion.AngleAxis(_lookYaw, Vector3.up)
-                                    * Quaternion.AngleAxis(-_lookPitch, Vector3.right)
-                                    * Quaternion.AngleAxis(-_lookRoll, Vector3.forward);
+                    // The stick points the view from the spline's (angles): released, it comes back
+                    _look = Vector3.Lerp(_look, Vector3.Scale(stick, new Vector3(maxLookYaw, maxLookPitch, maxLookRoll)), lookK);
+                    rotation = path * Quaternion.AngleAxis(_look.x, Vector3.up)
+                                    * Quaternion.AngleAxis(-_look.y, Vector3.right)
+                                    * Quaternion.AngleAxis(-_look.z, Vector3.forward);
                     _free = rotation;
                     break;
                 default:
