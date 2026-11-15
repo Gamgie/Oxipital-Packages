@@ -8,7 +8,8 @@ namespace Oxipital
 {
     public class CameraController : MonoBehaviour
     {
-        public enum CameraMovementType { Orbital, Spaceship, Sensor }
+        // New types go at the end: Unity and the Chataigne module store the index
+        public enum CameraMovementType { Orbital, Spaceship, Sensor, Spline }
 
         // Exposed to Chataigne but unused (Graphy is shown by the project's ToolsManager.activateGraphy)
         public bool renderMainWindow = true;
@@ -32,6 +33,8 @@ namespace Oxipital
         public SpaceshipMovement spaceshipCamera;
         [FormerlySerializedAs("handsCamera")]
         public SensorMovement sensorCamera;
+        // Optional : rides a spline handed by the scene (SplineMovement.SetSpline)
+        public SplineMovement splineCamera;
         [Range(0, 5)]
         public float cameraNoiseGain;
         [Range(0, 5)]
@@ -57,10 +60,13 @@ namespace Oxipital
             _cameraList.Add(orbitalCamera);
             _cameraList.Add(spaceshipCamera);
             _cameraList.Add(sensorCamera);
+            if (splineCamera != null)
+                _cameraList.Add(splineCamera);
 
             foreach (CameraMovement c in _cameraList)
             {
-                c.Init();
+                if (c != null)
+                    c.Init();
             }
 
             SwitchCamera(cameraType);
@@ -98,7 +104,8 @@ namespace Oxipital
             // Update noise parameters in all camera
             foreach (CameraMovement c in _cameraList)
             {
-                c.UpdateNoiseParameter(cameraNoiseGain, cameraNoiseFrequency);
+                if (c != null)
+                    c.UpdateNoiseParameter(cameraNoiseGain, cameraNoiseFrequency);
             }
         }
 
@@ -137,6 +144,7 @@ namespace Oxipital
             Vector3 cameraPosition = Vector3.zero;
             Quaternion cameraRotation = Quaternion.identity;
 
+            CameraMovement previousCamera = _activeCamera;
             if (_activeCamera)
             {
                 cameraPosition = _activeCamera.virtualCamera.transform.position;
@@ -156,6 +164,22 @@ namespace Oxipital
                 case CameraMovementType.Sensor:
                     _activeCamera = sensorCamera;
                     break;
+                case CameraMovementType.Spline:
+                    _activeCamera = splineCamera;
+                    break;
+            }
+
+            // A project whose Cameras object has no camera of that type: stay on the previous one
+            if (_activeCamera == null)
+            {
+                Debug.LogWarning("CameraController: no " + type + " camera");
+                _activeCamera = previousCamera;
+                if (_activeCamera != null)
+                {
+                    cameraType = _activeCamera.type;
+                    _activeCamera.SetActive(true, cameraTransitionDuration);
+                }
+                return;
             }
 
             // Hand off the outgoing camera's pose to the incoming one so the
@@ -173,7 +197,7 @@ namespace Oxipital
         {
             foreach (CameraMovement c in _cameraList)
             {
-                if (c.IsActive)
+                if (c != null && c.IsActive)
                     c.Reset(resetDuration);
             }
         }

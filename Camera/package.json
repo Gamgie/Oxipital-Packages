@@ -1,8 +1,8 @@
 {
   "name": "com.gamgie.oxipital.camera",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "displayName": "Oxipital Camera",
-  "description": "Caméras d'Oxipital : modes orbital, vaisseau et capteur SOMI, transitions Cinemachine, sortie Spout / Syphon, suivi du dôme. Pilotées en direct depuis Chataigne via OSCQuery.",
+  "description": "Caméras d'Oxipital : modes orbital, vaisseau, capteur SOMI et spline, transitions Cinemachine, sortie Spout / Syphon, suivi du dôme. Pilotées en direct depuis Chataigne via OSCQuery.",
   "unity": "6000.3",
   "author": {
     "name": "Gamgie",
@@ -12,6 +12,8 @@
   "dependencies": {
     "com.unity.render-pipelines.high-definition": "17.3.0",
     "com.unity.cinemachine": "3.1.6",
+    "com.unity.splines": "2.0.0",
+    "com.unity.mathematics": "1.2.6",
     "com.unity.ugui": "2.0.0",
     "com.benkuper.oscquery": "1.2.4",
     "jp.keijiro.klak.spout": "2.0.6",

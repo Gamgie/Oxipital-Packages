@@ -155,8 +155,9 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
 ### Camera system (`Camera/Runtime/Scripts/`)
 
 - `CameraController` is the top-level camera state machine: it owns a Cinemachine setup (`CinemachineBrain` +
-  one `CinemachineCamera` per mode) and switches between `CameraMovementType.Orbital / Spaceship / Sensor`
-  (`OrbitalMovement`, `SpaceshipMovement`, `SensorMovement`, each a `CameraMovement` subclass). On switch it
+  one `CinemachineCamera` per mode) and switches between `CameraMovementType.Orbital / Spaceship / Sensor / Spline`
+  (`OrbitalMovement`, `SpaceshipMovement`, `SensorMovement`, `SplineMovement`, each a `CameraMovement` subclass;
+  a new type goes at the end of the enum, and `splineCamera` is optional: null-checked). On switch it
   hands the outgoing camera's live position/rotation to the incoming one (`SetCameraTransform`) so the
   Cinemachine blend starts smoothly instead of snapping. It also drives shared FOV/ortho/noise/transition-time
   parameters into whichever camera is active, and toggles `isFullDome` for dome-rig output. `xWing` (the model
@@ -187,6 +188,28 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
   Calibration/`Reset` ease in over `calibrationBlendTime` through a decaying offset; switching modes hands
   nothing over (the pivot stays on the center), Cinemachine's blend smooths the switch. Never convert back to
   Euler or smooth per Euler axis (gimbal lock, ±180° spins).
+- `SplineMovement` (`Spline Camera target` + `CM Spline Camera`) rides a spline: the first spline of `spline`, a
+  `SplineContainer` usually handed at run time by the scene that owns it (`SetSpline`, not exposed to Chataigne:
+  show scenes come and go, the rig stays). Distances are metres along the spline, the container's position and
+  rotation apply but not its scale (as in Cinemachine's spline cameras). The rig computes the pose in `Update`
+  (not `FixedUpdate`: no physics, no 50 Hz judder), only while active; `CM Spline Camera` follows it exactly
+  (CinemachineFollow LockToTarget, no position damping) and turns with it (`CinemachineRotateWithFollowTarget`,
+  damping = `rotationDamping`), with the shared Perlin noise and the brain's blends.
+  - Travel: `speed` (m/s, negative = backwards) eased by `speedSmoothing`; `offset` (x right, y up) and `altitude`
+    eased by `offsetSmoothing`. Smoothing the inputs, not the output, keeps the camera exactly on the path at a
+    steady speed (no lag). `distance` is written every frame and can be set to jump; `loop` wraps (a cut unless
+    the spline is closed). Taking over from another camera, `joinNearestPoint` starts at the point nearest to it
+    and the speed eases in from 0.
+  - Ground: a scene can hand an `ICameraGround` (`SetGround`): the height becomes ground + `altitude` + the
+    spline's height above its container, the ground anticipated over `groundLookAhead` (rises before a hill, as
+    the Soledad Act 2 flight did) and eased by `groundSmoothing`.
+  - Rotation (`rotationMode`): `Spline` = aimed `aimAhead` metres ahead on the path (softer than the tangent),
+    level unless `followPitch` / `followRoll` (spline up vectors and a `CinemachineSplineRoll` on the spline's
+    object), `bank` leans into turns; `SplineAndLook` = that plus a gamepad look offset (`yaw1D` / `pitch1D` /
+    `roll1D`, same signs as the Spaceship, rates eased by `lookSmoothing`, `lookRecenter` swings back,
+    `maxLookPitch`); `Free` = the gamepad alone, from the view it took over.
+  - Drift: brownian (3-octave simplex) wandering of position and view, seeded by `driftSeed` and timed by
+    `Time.deltaTime`, so a Recorder render repeats (Cinemachine's Perlin noise reseeds at random each run).
 - `DomeCameraRigFollow` re-targets a dome rig transform to follow a camera target, compensating for the
   `com.pfc.dome-tools` rig being offset from the projection center (the dome-tools package itself is only
   needed by projects with dome scenes, it is not a dependency of the package).

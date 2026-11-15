@@ -3,6 +3,8 @@
     "rootNamespace": "Oxipital",
     "references": [
         "Unity.Cinemachine",
+        "Unity.Splines",
+        "Unity.Mathematics",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.HighDefinition.Runtime",
         "UnityEngine.UI",
