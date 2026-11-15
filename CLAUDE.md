@@ -208,7 +208,10 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
     level unless `followPitch` / `followRoll` (spline up vectors and a `CinemachineSplineRoll` on the spline's
     object), `bank` leans into turns; `SplineAndLook` = that plus a gamepad look (`yaw1D` / `pitch1D` / `roll1D`,
     same signs as the Spaceship) that points the view like a head: full stick = `maxLookYaw` / `maxLookPitch` /
-    `maxLookRoll` from the path's view, released = back on the path (eased by `lookSmoothing`). It used to
+    `maxLookRoll` from the path's view, released = back on the path, through a critically damped spring
+    (`Vector3.SmoothDamp`, `lookSmoothing` seconds, capped at `maxLookSpeed` deg/s): an exponential ease started a
+    swing at full speed, a jerk when turning round (1.2.2); `maxLookYaw` stops at 170 so full left and full right
+    stay apart. It used to
     integrate rates: a stick that never rests at exactly 0 then turned the view forever; `stickDeadzone` (0.1)
     applies in both look modes. `Free` = the gamepad alone turns the camera at `yawSpeed` / `pitchSpeed` /
     `rollSpeed`, from the view it took over.

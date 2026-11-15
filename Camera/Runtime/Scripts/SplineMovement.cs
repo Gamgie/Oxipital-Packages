@@ -86,10 +86,12 @@ namespace Oxipital
         [Range(-1f, 1f)] public float roll1D;
         [Tooltip("Stick values below this count as centred (a gamepad at rest never sends exactly 0).")]
         [Range(0f, 0.5f)] public float stickDeadzone = 0.1f;
-        [Tooltip("Seconds for the view to follow the sticks: softer starts and stops.")]
-        [Range(0f, 3f)] public float lookSmoothing = 0.4f;
+        [Tooltip("Seconds for the view to follow the sticks. Spline And Look: a spring, it speeds up and slows down smoothly (no jerk when swinging round).")]
+        [Range(0f, 3f)] public float lookSmoothing = 0.6f;
+        [Tooltip("Spline And Look: fastest turn of the view (degrees/s), so a swing to the back or back to the path stays slow.")]
+        [Range(10f, 720f)] public float maxLookSpeed = 90f;
         [Tooltip("Spline And Look: the stick points the view, like turning the head. Full stick = these angles from the spline's view (degrees); released, the view comes back to the spline.")]
-        [Range(0f, 180f)] public float maxLookYaw = 120f;
+        [Range(0f, 170f)] public float maxLookYaw = 120f;
         [Range(0f, 89f)] public float maxLookPitch = 60f;
         [Range(0f, 90f)] public float maxLookRoll = 30f;
         [Tooltip("Free: the stick turns the camera, at these speeds at full stick (degrees/s).")]
@@ -121,7 +123,7 @@ namespace Oxipital
         Vector3 _flat;                      // last level travel direction
         float _turnRate;                    // smoothed, degrees/s
         Vector3 _lookRate;                  // Free: smoothed turn rates (degrees/s): yaw, pitch, roll
-        Vector3 _look;                      // Spline And Look: smoothed view angles from the spline's (degrees)
+        Vector3 _look, _lookVelocity;       // Spline And Look: view angles from the spline's (degrees), their speed
         bool _resetPending;                 // ResetRide while another camera is shown: the next take-over starts there
         Quaternion _free = Quaternion.identity;
         float _driftTime;
@@ -175,6 +177,7 @@ namespace Oxipital
         public void ResetLook()
         {
             _look = Vector3.zero;
+            _lookVelocity = Vector3.zero;
             _lookRate = Vector3.zero;
         }
 
@@ -345,7 +348,9 @@ namespace Oxipital
                     break;
                 case RotationMode.SplineAndLook:
                     // The stick points the view from the spline's (angles): released, it comes back
-                    _look = Vector3.Lerp(_look, Vector3.Scale(stick, new Vector3(maxLookYaw, maxLookPitch, maxLookRoll)), lookK);
+                    // A spring (critically damped, speed capped): the view eases in and out of a swing, never jumps
+                    Vector3 target = Vector3.Scale(stick, new Vector3(maxLookYaw, maxLookPitch, maxLookRoll));
+                    _look = Vector3.SmoothDamp(_look, target, ref _lookVelocity, Mathf.Max(lookSmoothing, 0.01f), maxLookSpeed, dt);
                     rotation = path * Quaternion.AngleAxis(_look.x, Vector3.up)
                                     * Quaternion.AngleAxis(-_look.y, Vector3.right)
                                     * Quaternion.AngleAxis(-_look.z, Vector3.forward);
