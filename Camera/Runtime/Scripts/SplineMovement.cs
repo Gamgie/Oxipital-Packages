@@ -72,6 +72,8 @@ namespace Oxipital
         [Range(0f, 1f)] public float followPitch = 0f;
         [Tooltip("How much the spline's own roll (knot rotations, a CinemachineSplineRoll on the spline) rolls the camera.")]
         [Range(0f, 1f)] public float followRoll = 0f;
+        [Tooltip("Which way is up: 0 = the world's (level horizon, followPitch and followRoll apply), 1 = the spline's own up (its knot rotations): the camera turns with the spline in every direction, up a wall or round a loop. Offsets follow that up too.")]
+        [Range(0f, 1f)] public float splineUp = 0f;
         [Tooltip("Lean into the turns like a bird: degrees of roll per 10 degrees/s of turn.")]
         [Range(0f, 30f)] public float bank = 0f;
         [Tooltip("Seconds the view takes to follow the ride's turns (Cinemachine rotation damping).")]
@@ -144,13 +146,30 @@ namespace Oxipital
             }
         }
 
-        /// <summary>Hand the spline to ride (null = none). Restart = jump to startDistance.</summary>
+        /// <summary>Hand the spline to ride (null = none). Restart: jump to startDistance at full speed. Otherwise the
+        /// ride carries on from the point of the new spline nearest to the camera, at the same speed and look (a
+        /// scene can chain splines this way: the new one starts where the camera is).</summary>
         public void SetSpline(SplineContainer container, bool restart = true)
         {
             spline = container;
-            if (restart) ResetRide();
+            if (restart)
+            {
+                ResetRide();
+                return;
+            }
+            _flatReady = false;
+            JoinNearest(transform.position);
         }
 
+        // Distance of the point of the spline nearest to a world position
+        void JoinNearest(Vector3 position)
+        {
+            if (!HasSpline()) return;
+            Transform t = spline.transform;
+            var local = Matrix4x4.TRS(t.position, t.rotation, Vector3.one).inverse.MultiplyPoint3x4(position);
+            SplineUtility.GetNearestPoint(spline.Spline, (float3)local, out float3 _, out float n);
+            distance = spline.Spline.ConvertIndexUnit(n, PathIndexUnit.Normalized, PathIndexUnit.Distance);
+        }
         /// <summary>Hand the scene's ground (null = none): the camera rides at altitude above it.</summary>
         public void SetGround(ICameraGround ground)
         {
@@ -205,13 +224,7 @@ namespace Oxipital
                 return;
             }
             _speed = 0f;
-            if (joinNearestPoint && HasSpline())
-            {
-                Transform t = spline.transform;
-                var local = Matrix4x4.TRS(t.position, t.rotation, Vector3.one).inverse.MultiplyPoint3x4(position);
-                SplineUtility.GetNearestPoint(spline.Spline, (float3)local, out float3 _, out float n);
-                distance = spline.Spline.ConvertIndexUnit(n, PathIndexUnit.Normalized, PathIndexUnit.Distance);
-            }
+            if (joinNearestPoint) JoinNearest(position);
         }
 
         void Update()
@@ -291,14 +304,18 @@ namespace Oxipital
                 Sample(distance + direction * aimAhead, length, out Vector3 aim, out _);
                 if ((aim - onSpline).sqrMagnitude > 1e-4f) forward = aim - onSpline;
             }
-            Vector3 flat = new Vector3(forward.x, 0f, forward.z);
-            if (flat.sqrMagnitude < 1e-8f) flat = _flatReady ? _flat : Vector3.forward;
+            forward.Normalize();
+            // Up of the ride: the world's (level horizon) or the spline's own (walls, loops), blended by splineUp
+            Vector3 up = splineUp <= 0f ? Vector3.up : Vector3.Slerp(Vector3.up, splineRotation * Vector3.up, splineUp).normalized;
+            Vector3 flat = Vector3.ProjectOnPlane(forward, up);
+            if (flat.sqrMagnitude < 1e-8f) flat = Vector3.ProjectOnPlane(_flatReady ? _flat : Vector3.forward, up);
+            if (flat.sqrMagnitude < 1e-8f) flat = Vector3.Cross(Vector3.right, up);
             flat.Normalize();
-            Vector3 right = Vector3.Cross(Vector3.up, flat);
+            Vector3 right = Vector3.Cross(up, flat);
 
-            // ---- position: spline + offset, or altitude above the ground
+            // ---- position: spline + offset (right, up), or altitude above the ground
             float splineHeight = onSpline.y - spline.transform.position.y;
-            Vector3 position = onSpline + right * _offset.x + Vector3.up * _offset.y;
+            Vector3 position = onSpline + right * _offset.x + up * _offset.y;
             if (followGround && _ground != null)
             {
                 float target = _ground.GetGroundHeight(position);
@@ -312,11 +329,11 @@ namespace Oxipital
                 position.y = _groundHeight + _altitude + splineHeight + _offset.y;
             }
 
-            // ---- rotation along the spline: level heading, then pitch, roll and bank
-            float climb = Mathf.Atan2(forward.y, new Vector2(forward.x, forward.z).magnitude) * Mathf.Rad2Deg;
-            Quaternion path = Quaternion.LookRotation(flat, Vector3.up) * Quaternion.AngleAxis(-climb * followPitch, Vector3.right);
+            // ---- rotation along the spline: heading around the up, then pitch, roll and bank
+            float climb = Vector3.SignedAngle(flat, forward, right);   // positive = nose down
+            Quaternion path = Quaternion.LookRotation(flat, up) * Quaternion.AngleAxis(climb * followPitch, Vector3.right);
 
-            float turn = _flatReady && dt > 0f ? Vector3.SignedAngle(_flat, flat, Vector3.up) / dt : 0f;
+            float turn = _flatReady && dt > 0f ? Vector3.SignedAngle(Vector3.ProjectOnPlane(_flat, up), flat, up) / dt : 0f;
             _turnRate = Mathf.Lerp(_turnRate, turn, Damp(0.5f, dt));
             _flat = flat;
             _flatReady = true;
@@ -325,9 +342,9 @@ namespace Oxipital
             if (followRoll > 0f)
             {
                 Vector3 pathForward = path * Vector3.forward;
-                Vector3 splineUp = Vector3.ProjectOnPlane(splineRotation * Vector3.up, pathForward);
-                if (splineUp.sqrMagnitude > 1e-6f)
-                    roll += Vector3.SignedAngle(path * Vector3.up, splineUp, pathForward) * followRoll;
+                Vector3 splineUpVector = Vector3.ProjectOnPlane(splineRotation * Vector3.up, pathForward);
+                if (splineUpVector.sqrMagnitude > 1e-6f)
+                    roll += Vector3.SignedAngle(path * Vector3.up, splineUpVector, pathForward) * followRoll;
             }
             path *= Quaternion.AngleAxis(roll, Vector3.forward);
 

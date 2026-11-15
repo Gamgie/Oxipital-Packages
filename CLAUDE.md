@@ -204,6 +204,12 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
   - Ground: a scene can hand an `ICameraGround` (`SetGround`): the height becomes ground + `altitude` + the
     spline's height above its container, the ground anticipated over `groundLookAhead` (rises before a hill, as
     the Soledad Act 2 flight did) and eased by `groundSmoothing`.
+  - Up (`splineUp`, 1.3.0): 0 = the world's up (level horizon); 1 = the spline's own up from its knot rotations, so
+    the camera turns with the spline in every direction (up a wall, round a loop). The heading, `followPitch`,
+    `bank` (turn rate measured around that up) and `offset` (x right, y up) all use the blended up.
+  - Chaining splines: `SetSpline(other, false)` carries on from the point of `other` nearest to the camera, keeping
+    speed and look (`SetSpline(other, true)` restarts at `startDistance`). Soledad's Act 2 hands over from its
+    flight path to Bogota's path this way.
   - Rotation (`rotationMode`): `Spline` = aimed `aimAhead` metres ahead on the path (softer than the tangent),
     level unless `followPitch` / `followRoll` (spline up vectors and a `CinemachineSplineRoll` on the spline's
     object), `bank` leans into turns; `SplineAndLook` = that plus a gamepad look (`yaw1D` / `pitch1D` / `roll1D`,
