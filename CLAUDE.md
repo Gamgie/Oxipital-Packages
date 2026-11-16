@@ -105,6 +105,10 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
   - Emitter shapes: Unity only reads `StreamingAssets` from the project's `Assets`, so the basic shapes ship in
     `Core/Emitters~` and `Core/Editor/EmitterInstaller.cs` copies them into the project (automatically when the
     project has no `emitters` folder yet, or from the menu *Oxipital > Installer les émetteurs de base*).
+  - `particleHyperSize` (1.6.1, 0 to 1): like `dancerHyperSize` for the particles. `particleSize` lost its
+    `[InBuffer(23)]`: slot 23 is now the hidden `particleSizeOut` = particleSize x (1 + 100 x particleHyperSize), set
+    at the start of `OrbGroup.Update`; the graphs scale linearly with it (Sample Buffer 23, then Multiply), so values
+    above 1 just make bigger particles. Same slot, so the graphs and the Notion buffer table keep their index.
   - **Render types** (`OrbGroup.renderType`, `[InBuffer(24)]`): `UnlitOpaque` and `UnlitAdditive` each have a quad
     output in `OrbVFX.vfx` (block `OxipitalOutputQuadUnlit`, its "Render Type Index" keeps only its type).
     `LitCube`, `LitSphere` and `LitMesh` share ONE HDRP Lit Mesh output (block `OxipitalOutputMesh`): it keeps
@@ -116,7 +120,10 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
       laptop RTX 3060, 348 k grains at 1080p: cube (24 vertices) 44 ms GPU, icosphere (42) 122 ms, smooth
       octahedron (6) about 21 ms; each sun shadow cascade adds about 9 ms, the shadow map resolution nothing.
       `VFX/Meshes/OrbOctahedron` (6 vertices, smooth normals, same apparent size as the cube) is the cheap grain
-      to put in Particle Mesh. A new render type goes at the END of
+      to put in Particle Mesh; since 1.6.1 it is the default `particleMesh` of the Orb Group and Orb Group Lit prefabs
+      (the icosphere stays the VFX default when the field is empty). Measured in Soledad act 3 (dome 2048), 264 k
+      LitMesh grains: icosphere about 200 ms, octahedron 33 ms with 5 shadowed point lights, 17 ms without them: a
+      point light with shadows renders 6 faces, each drawing every grain again. A new render type goes at the END of
     the enum (Unity serializes the index; the Chataigne module lists the values).
   - **Infinite life mode** (`OrbGroup.infiniteLife`, `Core/Runtime/VFX/Shaders/InfiniteLifeInit.hlsl` /
     `InfiniteLifeUpdate.hlsl`): particles never die and the dancer intensity sets the particle count

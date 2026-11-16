@@ -252,9 +252,17 @@ namespace Oxipital
         [Range(0, 1)]
         public float textureOpacity = 0;
 
-        [InBuffer(23)]
         [Range(0, 1)]
         public float particleSize = 0;
+        [Tooltip("Makes the particles much bigger, like dancerHyperSize for the dancers: the size is multiplied by 1 + 100 x this.")]
+        [Range(0, 1)]
+        public float particleHyperSize = 0;
+        // What the VFX reads (slot 23): particleSize x (1 + 100 x particleHyperSize), set each frame. The graph scales
+        // linearly with it, so above 1 the particles grow past the old maximum.
+        [InBuffer(23)]
+        [HideInInspector]
+        [OSCQuery.DoNotExpose]
+        public float particleSizeOut = 0;
 
         [InBuffer(24)]
         public RenderType renderType = RenderType.UnlitAdditive;
@@ -397,6 +405,7 @@ namespace Oxipital
         {
             // Before base.Update() so the buffer sent this frame carries the new count / rank base
             updateInfiniteLife();
+            particleSizeOut = particleSize * (1 + 100 * particleHyperSize);
 
             base.Update();
 

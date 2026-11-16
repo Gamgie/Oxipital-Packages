@@ -178,7 +178,7 @@ MonoBehaviour:
   textureOpacity: 0
   particleSize: 0.5
   renderType: 1
-  particleMesh: {fileID: 0}
+  particleMesh: {fileID: 4300000, guid: d42ef74b6a0fd2e448724614f8d219cf, type: 2}
   meshOpacity: 0
   meshColorIntensity: 0
   lightIntensity: 0
