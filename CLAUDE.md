@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Two Unity packages (Unity `6000.3`, HDRP) extracted from the Oxipital-Engine project, so the engine can be added to
 any Unity project:
 
-- `Core/` = `com.gamgie.oxipital.core` ("Oxipital Core"): the particle "ballet" of glowing orbs (VFX Graph), force
+- `Core/` = `com.gamgie.oxipital.core` ("Oxipital Core"): the particle "ballet" of glowing orbs (VFX Graph), lights, force
   fields, infinite life mode, optical flow, Gaussian splats, basic emitter shapes.
 - `Camera/` = `com.gamgie.oxipital.camera` ("Oxipital Camera"): orbital / spaceship / SOMI sensor camera modes
   (Cinemachine), Spout / Syphon output, dome rig follow, post-processing controls.
@@ -135,6 +135,28 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
   - Custom HLSL blocks that read "Orb Buffer" in a context where a Sample Buffer node also reads it must declare
     it `StructuredBuffer<Single>` (`#define Single float` in `OxipitalHelpers.hlsl`), otherwise VFX Graph sees
     two different buffer types.
+
+### Lights (`Core/Runtime/Scripts/Lights/`, 1.5.0)
+
+A ballet of HDRP lights, on the same item/manager pattern: `LightManager : BaseManager<LightGroup>` (`Ballet/Light
+Groups`, count 0 in the prefab) spawns `Light Group.prefab`s; `LightGroup : DancerGroup<LightDancer>` places
+`Light Dancer.prefab`s with the usual dance patterns (Line, Circle, Manual, copied from the Force Group; the circle
+lies in the group's local XY plane, so rotate the group 90 degrees on X for a flat ring). A `LightDancer` holds a child
+`Light` (point or spot, Lumen unit, `HDAdditionalLightData`) and a child `Mesh` (built-in sphere, `Materials/Light
+Sphere.mat`, HDRP/Unlit; its colour is set per light through a MaterialPropertyBlock on `_UnlitColor`; no shadow
+casting, so the light is not trapped in its own mesh; any `mesh` can replace the sphere).
+- Light: `shape`, `color`, `intensity` (lumen), `range`, `spotAngle` / `spotSoftness`, `lightRadius` (HDRP shape
+  radius), `volumetric` / `volumetricIntensity` (halos and beams in the volumetric fog), `shadows`.
+- Orientation (`aim`): Pattern (the group's dancerLookAt / dancerRotation), Center, Outward, Movement (direction of
+  motion), Down, Up, then `aimOffset`.
+- Effects, all multiplied, so they stack with `dancerIntensity` and the count fade: `wave` (Constant, Sine, Triangle,
+  Saw, Square, Noise; `waveDepth`, `waveSpeed` in Hz or per beat, `wavePhaseDelay` between dancers), beat (`bpm`,
+  0 = off; each dancer flashes for `flashLength` of every `beatsPerFlash` beats, `flashSoftness` fades,
+  `beatDelay` between dancers = a chase), noise (`positionNoise`, `colorNoise` on hue and brightness,
+  `intensityNoise`, `noiseSpeed`, `seed`). `ResetBeat()` restarts the clock (on a downbeat).
+- Time accumulates from `Time.deltaTime` and the noise is seeded (Recorder renders repeat). Light properties are
+  written only when they change; a light below 0.01 lm is disabled. Like every dancer group, lights exist in Play mode
+  only. The Chataigne module does not list Light Groups yet (OSCQuery exposes them).
 
 ### Optical flow (`Core/Runtime/Scripts/OpticalFlow/`, `Core/Runtime/Shaders/OpticalFlow/`)
 

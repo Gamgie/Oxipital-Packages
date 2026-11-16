@@ -32,6 +32,7 @@ Transform:
   m_Children:
   - {fileID: 1608184644424614067}
   - {fileID: 292685453925606530}
+  - {fileID: 4224065277363635463}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7555857167101494324
@@ -46,6 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60cbf8b2c1272f44fb0d852a070af2cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  totalParticles: 0
 --- !u!1 &2230343802724983274
 GameObject:
   m_ObjectHideFlags: 0
@@ -91,8 +93,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   count: 4
-  itemPrefab: {fileID: 5986827384119583656, guid: 7e073da5725219e47b796a21b28149ec,
-    type: 3}
+  itemPrefab: {fileID: 5986827384119583656, guid: 7e073da5725219e47b796a21b28149ec, type: 3}
 --- !u!1 &6782365086676447449
 GameObject:
   m_ObjectHideFlags: 0
@@ -138,5 +139,51 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   count: 4
-  itemPrefab: {fileID: 5956691939429203287, guid: 45a80c729585ca442a13e16b22c8a1d2,
-    type: 3}
+  itemPrefab: {fileID: 5956691939429203287, guid: 45a80c729585ca442a13e16b22c8a1d2, type: 3}
+  firstItemIntensity: 0.5
+--- !u!1 &8345126981257827872
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4224065277363635463}
+  - component: {fileID: 5789007348473193535}
+  m_Layer: 0
+  m_Name: Light Groups
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4224065277363635463
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8345126981257827872}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2530438436232717069}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5789007348473193535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8345126981257827872}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccf8491610d63494d84a607bca8de785, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Gamgie.Oxipital.Core::Oxipital.LightManager
+  count: 0
+  itemPrefab: {fileID: 4649093706696502119, guid: 6dd12668ca84f51429e10d1f16e5cbc8, type: 3}
