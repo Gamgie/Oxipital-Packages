@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6440903434619222591}
   - component: {fileID: 2495122535985444785}
   - component: {fileID: 4659298708232109781}
+  - component: {fileID: 6836379516333950201}
   m_Layer: 0
   m_Name: Light Group
   m_TagString: Untagged
@@ -87,6 +88,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  targetMasterBallet: None
+  masterBalletTransition: 2
   shape: 0
   color: {r: 1, g: 0.55, b: 0.3, a: 1}
   intensity: 8000
@@ -97,8 +100,6 @@ MonoBehaviour:
   volumetric: 1
   volumetricIntensity: 1
   shadows: 0
-  aim: 1
-  aimOffset: {x: 0, y: 0, z: 0}
   showMesh: 1
   meshSize: 0.3
   meshEmission: 4
@@ -112,9 +113,7 @@ MonoBehaviour:
   flashLength: 0.5
   flashSoftness: 0.2
   beatDelay: 0
-  positionNoise: 0
   colorNoise: 0
-  intensityNoise: 0
   noiseSpeed: 0.3
   seed: 0
 --- !u!114 &6440903434619222591
@@ -180,3 +179,22 @@ MonoBehaviour:
   pos14: {x: 0, y: 0, z: 0}
   pos15: {x: 0, y: 0, z: 0}
   pos16: {x: 0, y: 0, z: 0}
+--- !u!114 &6836379516333950201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4649093706696502119}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62a6c8a57563bd24288d2f50ad629e2a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Gamgie.Oxipital.Core::Oxipital.NoiseDancePattern
+  blendMode: 0
+  weight: 0
+  speedWeight: 1
+  amplitude: 1
+  frequency: 0.2
+  axes: {x: 1, y: 1, z: 1}
+  seed: 0

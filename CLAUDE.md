@@ -136,6 +136,32 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
     it `StructuredBuffer<Single>` (`#define Single float` in `OxipitalHelpers.hlsl`), otherwise VFX Graph sees
     two different buffer types.
 
+### Noise pattern and master ballets (1.6.0)
+
+- Pattern blending: the patterns add up in pattern units (Add, Multiply, Replace, each by its smoothed `weight`), then
+  the group scales the sum once by `patternSize` (spread by `patternSizeSpread`), then the `AfterSize` patterns (the
+  noise) apply in local units. Before 1.6.0 each pattern rescaled the running sum, so two active patterns put the first
+  one at patternSize squared. `LineDancePattern.lineAxis` (X by default) and `oscillationAxis`: with lineAxis Z,
+  across the circle's XY plane, Line + Circle (both Add) is a helix.
+- `NoiseDancePattern` (`Ballet/Patterns`, on every group prefab, weight 0): brownian wandering of each dancer
+  (`amplitude` in group local units, `frequency`, `axes`, `seed`), added after the patternSize scaling, on its own
+  clock (moves even when the patterns stand still). Keep it after the other patterns.
+  Everything that moves a dancer is a pattern; groups only add looks (light, particles, force).
+- Master / slave: every `DancerGroup` has `targetMasterBallet` (the name of another group, `None` = free; the
+  Inspector shows a dropdown of the groups of the open scenes, plus the names the managers will give in Play mode,
+  `Force Group 1`...) and `masterBalletTransition` (s). After its own patterns, dancer i goes onto the master's
+  dancer i (modulo the master's count). Once synced it sits exactly there, no smoothing: the transition only shapes
+  the changes (the weight ramps on sync and back on release, and a change of master fades out the gap between the
+  old place and the new master). The slave first calls `UpdateDancers()` on its master (each group places its
+  dancers once per frame), so it reads the master's positions of this very frame, whatever the Update order. A synced slave also
+  takes its master's count, ramped from its own over the transition (through `BaseManager.activeCount`, fractional, so
+  dancers appear and leave one by one with the usual fade, `dancerWeightSizeFactor` included); its own `count` field
+  is untouched and comes back on release. Options `masterSyncIntensity` and
+  `masterSyncSize` (on by default): its dancers also take the intensity / size of their master dancer, so the
+  master's fades show on the slave; each option has its own ramp over the transition, so switching it never jumps. Guarded against two groups following each
+  other. The rotation (look-at) is computed after, from the new place. Groups
+  register in `DancerGroups.All` (`IDancerGroup`: name cached at OnEnable, dancer count and positions).
+
 ### Lights (`Core/Runtime/Scripts/Lights/`, 1.5.0)
 
 A ballet of HDRP lights, on the same item/manager pattern: `LightManager : BaseManager<LightGroup>` (`Ballet/Light
@@ -147,13 +173,14 @@ Sphere.mat`, HDRP/Unlit; its colour is set per light through a MaterialPropertyB
 casting, so the light is not trapped in its own mesh; any `mesh` can replace the sphere).
 - Light: `shape`, `color`, `intensity` (lumen), `range`, `spotAngle` / `spotSoftness`, `lightRadius` (HDRP shape
   radius), `volumetric` / `volumetricIntensity` (halos and beams in the volumetric fog), `shadows`.
-- Orientation (`aim`): Pattern (the group's dancerLookAt / dancerRotation), Center, Outward, Movement (direction of
-  motion), Down, Up, then `aimOffset`.
+- Orientation and movement belong to the group and its patterns, like every dancer group: a light points where its
+  dancer points (`dancerLookAt`, `dancerLookAtMode`, `dancerRotation`, blended so a change never jumps), and a
+  `NoiseDancePattern` makes it wander.
 - Effects, all multiplied, so they stack with `dancerIntensity` and the count fade: `wave` (Constant, Sine, Triangle,
   Saw, Square, Noise; `waveDepth`, `waveSpeed` in Hz or per beat, `wavePhaseDelay` between dancers), beat (`bpm`,
   0 = off; each dancer flashes for `flashLength` of every `beatsPerFlash` beats, `flashSoftness` fades,
-  `beatDelay` between dancers = a chase), noise (`positionNoise`, `colorNoise` on hue and brightness,
-  `intensityNoise`, `noiseSpeed`, `seed`). `ResetBeat()` restarts the clock (on a downbeat).
+  `beatDelay` between dancers = a chase), and `colorNoise` (hue and brightness, `noiseSpeed`, `seed`). A flicker is
+  the Noise wave. `ResetBeat()` restarts the clock (on a downbeat).
 - Time accumulates from `Time.deltaTime` and the noise is seeded (Recorder renders repeat). Light properties are
   written only when they change; a light below 0.01 lm is disabled. Like every dancer group, lights exist in Play mode
   only. The Chataigne module does not list Light Groups yet (OSCQuery exposes them).

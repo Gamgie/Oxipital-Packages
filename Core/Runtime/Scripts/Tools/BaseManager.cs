@@ -30,9 +30,14 @@ namespace Oxipital
         override protected void Update()
         {
             base.Update();
-            while (Mathf.Ceil(count) < items.Count) removeLastItem();
-            while (Mathf.Ceil(count) > items.Count) addItem();
+            float target = activeCount;
+            while (Mathf.Ceil(target) < items.Count) removeLastItem();
+            while (Mathf.Ceil(target) > items.Count) addItem();
         }
+
+        /// <summary>The count actually used: count, unless a subclass takes it from elsewhere (a slave dancer group takes its
+        /// master's).</summary>
+        protected virtual float activeCount => count;
 
         virtual protected T addItem()
         {

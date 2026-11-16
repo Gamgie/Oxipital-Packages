@@ -6,17 +6,17 @@ namespace Oxipital
 {
     /// <summary>
     /// A ballet of lights: N HDRP lights (point or spot) placed by the group's dance patterns like any dancer group,
-    /// each shown by a glowing mesh (a sphere by default). Aimed at the centre, outwards, along their motion, up, down
-    /// or as the pattern turns them. Their intensity is the product of every effect, so they stack: the group's
-    /// dancerIntensity and count fade, an oscillation (wave, depth, speed, phase delay between dancers), a beat
-    /// (bpm: each dancer flashes for flashLength of each flash period, beatDelay between dancers) and noise (on the
-    /// position, the colour and the intensity). Time is accumulated from Time.deltaTime and the noise is seeded, so a
-    /// Recorder render repeats. Nothing is allocated per frame.
+    /// each shown by a glowing mesh (a sphere by default). Movement and orientation belong to the dance patterns and the
+    /// group (a NoiseDancePattern for wandering; dancerLookAt, dancerLookAtMode and dancerRotation for where the lights
+    /// point, blended so a change never jumps). Their intensity is the product of every effect, so they stack: the
+    /// group's dancerIntensity and count fade, an oscillation (wave, Noise among them, depth, speed, phase delay between
+    /// dancers) and a beat (bpm: each dancer flashes for flashLength of each flash period, beatDelay between dancers),
+    /// plus a colour noise. Time is accumulated from Time.deltaTime and the noise is seeded, so a Recorder render
+    /// repeats. Nothing is allocated per frame.
     /// </summary>
     public class LightGroup : DancerGroup<LightDancer>
     {
         public enum Shape { Point, Spot }
-        public enum Aim { Pattern, Center, Outward, Movement, Down, Up }
         public enum Wave { Constant, Sine, Triangle, Saw, Square, Noise }
 
         [Space(20)]
@@ -38,12 +38,6 @@ namespace Oxipital
         public bool volumetric = true;
         [Range(0f, 16f)] public float volumetricIntensity = 1f;
         public bool shadows = false;
-
-        [Header("Orientation")]
-        [Tooltip("Pattern: as the dancer patterns turn the dancers (dancerLookAt, dancerRotation). Center / Outward: towards or away from the group's centre. Movement: along the dancer's motion.")]
-        public Aim aim = Aim.Center;
-        [Tooltip("Rotation added to the aim (degrees).")]
-        public Vector3 aimOffset = Vector3.zero;
 
         [Header("Mesh")]
         public bool showMesh = true;
@@ -75,13 +69,9 @@ namespace Oxipital
         [Tooltip("Delay between one dancer and the next, as a fraction of the flash period: a chase.")]
         [Range(0f, 1f)] public float beatDelay = 0f;
 
-        [Header("Noise")]
-        [Tooltip("Wandering of each light around its place (m).")]
-        [Range(0f, 10f)] public float positionNoise = 0f;
+        [Header("Colour noise")]
         [Tooltip("Hue and brightness variation of each light.")]
         [Range(0f, 1f)] public float colorNoise = 0f;
-        [Tooltip("Flicker of each light's intensity.")]
-        [Range(0f, 1f)] public float intensityNoise = 0f;
         [Range(0f, 5f)] public float noiseSpeed = 0.3f;
         public int seed = 0;
 
@@ -105,18 +95,12 @@ namespace Oxipital
             {
                 LightDancer d = items[i];
                 if (d == null || d.lightSource == null) continue;
-                Transform t = d.transform;
-
-                // ---- noise
                 float seedA = seed * 17.31f + i * 7.13f;
                 float nt = _time * noiseSpeed;
-                if (positionNoise > 0f)
-                    t.position += new Vector3(Noise(nt, seedA), Noise(nt, seedA + 31.7f), Noise(nt, seedA + 63.1f)) * positionNoise;
 
                 // ---- intensity: every effect multiplies
                 float fade = d.intensity * (1f - d.killProgress);
                 float level = fade * WaveFactor(i) * BeatFactor(i);
-                if (intensityNoise > 0f) level *= 1f - intensityNoise * (0.5f + 0.5f * Noise(nt * 3f, seedA + 91.3f));
 
                 Color c = color;
                 if (colorNoise > 0f)
@@ -127,29 +111,9 @@ namespace Oxipital
                     c = Color.HSVToRGB(h, s, v);
                 }
 
-                // ---- orientation
-                Vector3 position = t.position;
-                if (d.hasLastPosition && dt > 0f)
-                {
-                    Vector3 moved = position - d.lastPosition;
-                    if (moved.sqrMagnitude > 1e-6f) d.moveDirection = moved.normalized;
-                }
-                d.lastPosition = position;
-                d.hasLastPosition = true;
+                // The light points where the dancer points (dancerLookAt, dancerLookAtMode, dancerRotation of the group)
                 Transform lt = d.lightSource.transform;
-                Vector3 dir;
-                switch (aim)
-                {
-                    case Aim.Center: dir = transform.position - position; break;
-                    case Aim.Outward: dir = position - transform.position; break;
-                    case Aim.Movement: dir = d.moveDirection; break;
-                    case Aim.Down: dir = Vector3.down; break;
-                    case Aim.Up: dir = Vector3.up; break;
-                    default: dir = t.rotation * Vector3.forward; break;
-                }
-                if (dir.sqrMagnitude < 1e-8f) dir = Vector3.down;
-                Vector3 up = Mathf.Abs(Vector3.Dot(dir.normalized, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
-                lt.rotation = Quaternion.LookRotation(dir, up) * Quaternion.Euler(aimOffset);
+                if (lt.localRotation != Quaternion.identity) lt.localRotation = Quaternion.identity;
 
                 ApplyLight(d, c, intensity * level);
                 ApplyMesh(d, c, level);

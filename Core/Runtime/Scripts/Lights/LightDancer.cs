@@ -16,9 +16,6 @@ namespace Oxipital
 
         internal HDAdditionalLightData lightData;
         internal Mesh defaultMesh;
-        internal Vector3 lastPosition;
-        internal Vector3 moveDirection = Vector3.forward;
-        internal bool hasLastPosition;
         internal MaterialPropertyBlock block;
 
         void Awake()

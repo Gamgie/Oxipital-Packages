@@ -14,6 +14,9 @@ namespace Oxipital
         [Range(0, 1)]
         public float speedWeight = 1;
 
+        /// <summary>Applied after the group has scaled the patterns by patternSize (offsets in group local units).</summary>
+        public virtual bool AfterSize => false;
+
         // Reused by getPatternPositions, so no list is allocated per frame
         protected readonly List<Vector3> positionsCache = new List<Vector3>();
         public virtual void updatePattern<T>(DancerGroup<T> group) where T : Dancer
@@ -45,12 +48,8 @@ namespace Oxipital
 
                 float smoothWeight = Mathf.Sin(weight * Mathf.PI - Mathf.PI / 2) * 0.5f + 0.5f;
 
-                float rel = i*1f / group.count;
-
-                float pRelSize = Mathf.Lerp(1, rel, group.patternSizeSpread);
-                float pSize = Mathf.Lerp(0, group.patternSize, pRelSize);
-
-                dancer.transform.localPosition = Vector3.Lerp(dancer.transform.localPosition, targetPos, smoothWeight) * pSize;
+                // In pattern units: the group scales the sum of its patterns by patternSize once, after all of them
+                dancer.transform.localPosition = Vector3.Lerp(dancer.transform.localPosition, targetPos, smoothWeight);
             }
         }
 

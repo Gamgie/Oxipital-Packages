@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1483635194092843799}
   - component: {fileID: 7940719435544600441}
   - component: {fileID: 5949178644392962515}
+  - component: {fileID: 8873006941124726173}
   m_Layer: 0
   m_Name: Force Group
   m_TagString: Untagged
@@ -48,14 +49,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   count: 1
-  itemPrefab: {fileID: 2571879226783642111, guid: 233b1e6851bc36c44b2e088563956980,
-    type: 3}
+  itemPrefab: {fileID: 2571879226783642111, guid: 233b1e6851bc36c44b2e088563956980, type: 3}
   patternSize: 1.2
   patternSizeSpread: 0
   patternAxisSpread: 0
   patternSpeed: 0
   patternSpeedRandom: 0
-  patternTime: 0
   patternTimeOffset: 0
   dancerSize: 1
   dancerHyperSize: 0
@@ -89,6 +88,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  targetMasterBallet: None
+  masterBalletTransition: 2
   forceFactorInside: 1
   forceFactorOutside: 0
   radialIntensity: 0
@@ -191,3 +192,22 @@ MonoBehaviour:
   pos14: {x: 0, y: 0, z: 0}
   pos15: {x: 0, y: 0, z: 0}
   pos16: {x: 0, y: 0, z: 0}
+--- !u!114 &8873006941124726173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5986827384119583656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62a6c8a57563bd24288d2f50ad629e2a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Gamgie.Oxipital.Core::Oxipital.NoiseDancePattern
+  blendMode: 0
+  weight: 0
+  speedWeight: 1
+  amplitude: 1
+  frequency: 0.2
+  axes: {x: 1, y: 1, z: 1}
+  seed: 0
