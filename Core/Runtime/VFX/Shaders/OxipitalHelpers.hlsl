@@ -18,6 +18,12 @@
 #define ORB_INFINITE_COUNT 2
 #define ORB_INFINITE_RANK_BASE 35
 #define INFINITE_LIFE_HOLD 0.1 // fraction of its lifetime where an infinite particle stops aging (just after the size fade-in)
+// Orb Buffer group fields of the bounds box (OrbGroup.boundsMode...)
+#define ORB_BOUNDS_MODE 36
+#define ORB_BOUNDS_SIZE 37
+#define ORB_BOUNDS_STRENGTH 40
+#define ORB_BOUNDS_CENTER 41
+#define ORB_BOUNDS_STEP 44
 
 float getBufferFloatProperty(in int index, in StructuredBuffer<float> buffer)
 {

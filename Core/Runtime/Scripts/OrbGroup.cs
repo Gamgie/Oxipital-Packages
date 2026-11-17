@@ -278,6 +278,12 @@ namespace Oxipital
         public float meshColorIntensity = 0;
         [Range(0, 1)]
         public float lightIntensity = 0;
+        [Tooltip("Lit render types: 0 = plastic, 1 = metal (reflects its surroundings tinted by the particle colour).")]
+        [Range(0, 1)]
+        public float metallic = 0;
+        [Tooltip("Lit render types: 0 = rough, 1 = mirror (sharp highlights of the lights).")]
+        [Range(0, 1)]
+        public float smoothness = 0.5f;
         public string textureFolderPath = "";
         public string textureName = "";
         public bool useSpoutTexture = false;
@@ -322,6 +328,37 @@ namespace Oxipital
         [OSCQuery.DoNotExpose]
         public float infiniteRankBase = 0; // rank of the first infinite particle spawned this frame - 1
 
+        // Bounds box: keeps every particle (infinite life or not) in a box on the world axes, centred on the group
+        public enum BoundsMode { Off, Wall, Soft, Wrap }
+
+        [Header("Bounds")]
+        [Tooltip("Keeps the particles in a box (world axes, centred on the group + boundsCenter). Wall: they bounce on its faces. Soft: pulled back in, faster the further out. Wrap: they come back in through the opposite face.")]
+        [InBuffer(36)]
+        public BoundsMode boundsMode = BoundsMode.Off;
+
+        [Tooltip("Size of the box (world units).")]
+        [InBuffer(37)]
+        public Vector3 boundsSize = new Vector3(20, 20, 20);
+
+        [Tooltip("Wall: bounce (0 = they slide along the wall, 1 = elastic). Soft: how hard they are pulled back.")]
+        [InBuffer(40)]
+        [Range(0, 1)]
+        public float boundsStrength = 0.5f;
+
+        [Tooltip("Offset of the box centre from the group (world axes).")]
+        public Vector3 boundsCenter = Vector3.zero;
+
+        // What the VFX reads: the box centre in world space and the simulation step (Soft), set each frame
+        [InBuffer(41)]
+        [HideInInspector]
+        [OSCQuery.DoNotExpose]
+        public Vector3 boundsCenterOut;
+
+        [InBuffer(44)]
+        [HideInInspector]
+        [OSCQuery.DoNotExpose]
+        public float boundsStep;
+
         VFXEventAttribute infiniteSpawnAttribute;
         static readonly int spawnInfiniteEventID = Shader.PropertyToID("SpawnInfinite");
         static readonly int spawnCountID = Shader.PropertyToID("spawnCount");
@@ -363,6 +400,8 @@ namespace Oxipital
         static readonly int colorOverLifeID = Shader.PropertyToID("Color Over Life");
         static readonly int colorOverSpeedID = Shader.PropertyToID("Color Over Speed");
         static readonly int sourcePositionID = Shader.PropertyToID("Source Position");
+        static readonly int metallicID = Shader.PropertyToID("Metallic");
+        static readonly int smoothnessID = Shader.PropertyToID("Smoothness");
         // Force buffer property IDs by force group name ("Force Group 1" and "Force Group 1B")
         static readonly Dictionary<string, (int buffer, int bufferB)> forceBufferIDs = new Dictionary<string, (int, int)>();
         readonly HashSet<string> missingForceBuffers = new HashSet<string>();
@@ -394,6 +433,14 @@ namespace Oxipital
 			spoutTexture2D = new Texture2D(spoutTexture.width, spoutTexture.height, TextureFormat.RGBAFloat, false);
 		}
 
+        // The bounds box in the Scene view
+        void OnDrawGizmosSelected()
+        {
+            if (boundsMode == BoundsMode.Off) return;
+            Gizmos.color = new Color(0.3f, 0.8f, 1f, 0.8f);
+            Gizmos.DrawWireCube(transform.position + boundsCenter, boundsSize);
+        }
+
         protected override void OnDisable()
         {
             base.OnDisable();
@@ -406,6 +453,8 @@ namespace Oxipital
             // Before base.Update() so the buffer sent this frame carries the new count / rank base
             updateInfiniteLife();
             particleSizeOut = particleSize * (1 + 100 * particleHyperSize);
+            boundsCenterOut = transform.position + boundsCenter;
+            boundsStep = VFXManager.fixedTimeStep; // OrbVFX updates with a fixed delta time
 
             base.Update();
 
@@ -416,6 +465,8 @@ namespace Oxipital
             updateGradients();
             updateParticleMesh();
             vfx.SetVector3(sourcePositionID, transform.position);
+            vfx.SetFloat(metallicID, metallic);
+            vfx.SetFloat(smoothnessID, smoothness);
 
 			foreach (var item in items) item.debugColor = color;
 

@@ -134,7 +134,7 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
     0 = normal particle). In Update, ranks above `infiniteCount` are killed (lowering intensity removes particles)
     and the others have their age held at `INFINITE_LIFE_HOLD` (10%) of their lifetime so over-life curves still
     apply. Switching the mode off or `kill()` clears ranks so particles age and fade out normally. Buffer fields:
-    `infiniteLife` = 1, `infiniteCount` = 2, `infiniteRankBase` = 35 (next free `InBuffer` index: 36).
+    `infiniteLife` = 1, `infiniteCount` = 2, `infiniteRankBase` = 35 (next free `InBuffer` index since 1.7.0: 45).
     `gridDimension` (9–11) / `gridDensity` (12) are reserved in the buffer for the upcoming grid emission and not
     read by the VFX yet.
     Known limits: KillDarkParticles can kill some ranks at spawn in UnlitAdditive; counts can drift if the effect
@@ -142,6 +142,19 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
   - Custom HLSL blocks that read "Orb Buffer" in a context where a Sample Buffer node also reads it must declare
     it `StructuredBuffer<Single>` (`#define Single float` in `OxipitalHelpers.hlsl`), otherwise VFX Graph sees
     two different buffer types.
+  - **Lit material** (1.7.0): `OrbGroup.metallic` (0) and `smoothness` (0.5) feed the exposed "Metallic" and
+    "Smoothness" of `OrbVFX` (linked to the Lit Mesh output's slots, so one value per group), set every frame. Metal
+    reflects its surroundings: in a dark scene it only shows the highlights of the lights (raise smoothness).
+  - **Bounds box** (1.7.0, `OrbGroup.boundsMode` Off / Wall / Soft / Wrap, `boundsSize`, `boundsStrength`,
+    `boundsCenter`): keeps every particle in a box on the world axes centred on the group + `boundsCenter`. Done at
+    the start of `UpdateInfiniteLife` (the Custom HLSL block at the end of Update already reading the Orb Buffer;
+    written inline because the block finds the attributes it uses in the function body), before the velocity is
+    integrated. Wall: clamped on the face, outward speed bounced (strength = bounce). Soft: spring stiffening with
+    the distance out (`over x (1 + over) x 20 x strength`) plus braking while out, and a hard limit a quarter of the
+    box size beyond each face (a strong outward force, such as a repelling radial, beats the spring alone). Wrap: back in through the opposite face (even density under turbulence). Buffer: `boundsMode`
+    36, `boundsSize` 37-39, `boundsStrength` 40, hidden `boundsCenterOut` 41-43 (world centre) and `boundsStep` 44
+    (`VFXManager.fixedTimeStep`: OrbVFX updates with a fixed delta time). Gizmo when the group is selected.
+    A change to an HLSL file reimports `OrbVFX`, but an effect already playing keeps the old code: restart Play mode.
 
 ### Noise pattern and master ballets (1.6.0)
 
@@ -224,6 +237,11 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
 - `CameraMovement` (abstract) is the interface each movement mode implements: `Init`, `UpdateMovement`,
   `SetActive`, `Reset`, `UpdateFOV`/`UpdateOrthoSize`, `UpdateZOffset`, `UpdateNoiseParameter` (Cinemachine Perlin
   noise), `SetCameraTransform`.
+- Timing (1.7.0): `CameraController` calls `UpdateMovement` in `FixedUpdate`, which only the Spaceship uses
+  (rigidbody forces, the rigidbody interpolates). Every other rig moves in its own `Update` (Orbital since 1.7.0,
+  Sensor, Spline), and the distance and lens are applied in `Update`. A rig moved in `FixedUpdate` without a
+  rigidbody makes the brain's Smart Update move its camera at 50 Hz: frames rendered at another rate get two steps
+  or none, an irregular stutter (the Orbital camera did this before 1.7.0).
 - Rig animations (move/rotate to a view, calibration blend) use `CameraTween`, a tiny replacement for the former
   DOTween calls (ease OutQuad, advanced in the owner's `Update`, `Rotate` interpolates each Euler axis the shortest
   way like DOTween's `RotateMode.Fast`). The package must not depend on DOTween (not a UPM package).
@@ -284,7 +302,9 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
     `Time.deltaTime`, so a Recorder render repeats (Cinemachine's Perlin noise reseeds at random each run).
 - `DomeCameraRigFollow` re-targets a dome rig transform to follow a camera target, compensating for the
   `com.pfc.dome-tools` rig being offset from the projection center (the dome-tools package itself is only
-  needed by projects with dome scenes, it is not a dependency of the package).
+  needed by projects with dome scenes, it is not a dependency of the package). It follows right after the brain
+  has moved the camera (`CinemachineCore.CameraUpdatedEvent`, plus a late `LateUpdate`): following in `Update`
+  showed the previous frame's pose, so the dome jittered with every change of frame time (fixed in 1.7.0).
 - `CameraSpoutManager` (`[ExecuteInEditMode]`) owns the output `RenderTexture` that the main camera renders
   into, and streams it out via `Klak.Spout.SpoutSender` on Windows or `Klak.Syphon.SyphonServer` on macOS
   (platform is chosen at runtime via `Application.platform`); output resolution is persisted in `PlayerPrefs`.

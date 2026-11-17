@@ -32,18 +32,17 @@ namespace Oxipital
 			_isActive = false;
 		}
 
+		// The orbit is applied at frame rate here, not in UpdateMovement (called from FixedUpdate): rotated at the
+		// physics rate (50 Hz), the target made Cinemachine's Smart Update move the camera at 50 Hz too, so frames
+		// rendered at another rate got two steps or none (an irregular stutter).
 		void Update()
 		{
 			_moveTween.Update(Time.deltaTime);
 			_resetMoveTween.Update(Time.deltaTime);
 			_rotateTween.Update(Time.deltaTime);
-		}
 
-		public override bool UpdateMovement()
-		{
-			// our camera is not active so leave now.
-			if (!base.UpdateMovement())
-				return false;
+			if (!_isActive)
+				return;
 
 			// Rotate target transform according to speed
 			if (controlRotateWithAngle == false)
@@ -60,8 +59,12 @@ namespace Oxipital
 
 			if(!_moveTween.active)
 				transform.position = positionTarget;
+		}
 
-			return true;
+		public override bool UpdateMovement()
+		{
+			// Nothing at the physics rate: the orbit moves in Update
+			return base.UpdateMovement();
 		}
 
 		public override void Reset(float duration)

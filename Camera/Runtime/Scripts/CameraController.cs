@@ -107,17 +107,12 @@ namespace Oxipital
                 if (c != null)
                     c.UpdateNoiseParameter(cameraNoiseGain, cameraNoiseFrequency);
             }
-        }
 
-        // Movement need physics so we need to update 
-        private void FixedUpdate()
-        {
-            // Update our active camera
+            // Distance and lens at frame rate (in FixedUpdate, a zoom driven from Chataigne stepped at 50 Hz)
             foreach (CameraMovement c in _cameraList)
             {
                 if (c != null && c.IsActive)
                 {
-                    c.UpdateMovement();
                     c.UpdateZOffset(followZOffset);
 
                     if(!isFullDome)
@@ -135,6 +130,16 @@ namespace Oxipital
                         }
                     }
                 }
+            }
+        }
+
+        // Physics movements (the spaceship's rigidbody forces) at the physics rate; the others move in their own Update
+        private void FixedUpdate()
+        {
+            foreach (CameraMovement c in _cameraList)
+            {
+                if (c != null && c.IsActive)
+                    c.UpdateMovement();
             }
         }
 
