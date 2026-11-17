@@ -30,6 +30,9 @@ namespace Oxipital
         bool m_warnedSize;
         #endregion
 
+        /// <summary>The texture the camera renders into while the output is on (null when off).</summary>
+        public RenderTexture OutputTexture => isActiveAndEnabled ? m_renderTexture : null;
+
         static bool IsMac => Application.platform == RuntimePlatform.OSXPlayer || Application.platform == RuntimePlatform.OSXEditor;
         static bool IsWindows => Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor;
 
