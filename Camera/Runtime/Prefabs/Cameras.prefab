@@ -246,6 +246,8 @@ MonoBehaviour:
   startDistance: 0
   loop: 1
   joinNearestPoint: 1
+  useProgress: 0
+  progress: 0
   speed: 20
   speedSmoothing: 1
   distance: 0
@@ -259,17 +261,21 @@ MonoBehaviour:
   aimAhead: 40
   followPitch: 0
   followRoll: 0
+  splineUp: 0
   bank: 0
   rotationDamping: 0.5
   yaw1D: 0
   pitch1D: 0
   roll1D: 0
+  stickDeadzone: 0.1
+  lookSmoothing: 0.4
+  maxLookSpeed: 90
+  maxLookYaw: 120
+  maxLookPitch: 80
+  maxLookRoll: 30
   yawSpeed: 60
   pitchSpeed: 45
   rollSpeed: 45
-  lookSmoothing: 0.4
-  lookRecenter: 0
-  maxLookPitch: 80
   driftPosition: 0
   driftRotation: 0
   driftFrequency: 0.1
@@ -395,6 +401,94 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotateWithFollowTarget
   Damping: 0
+--- !u!1 &747319308627875840
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8829618311327199666}
+  - component: {fileID: 6218335588434684820}
+  - component: {fileID: 3472945289439197762}
+  - component: {fileID: 1484947027075339128}
+  m_Layer: 0
+  m_Name: Unity Spout Oxipital
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8829618311327199666
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 747319308627875840}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1230106276677008758}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6218335588434684820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 747319308627875840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45099d624c1e6c14e9514f4e5ea1ed9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Klak.Spout.Runtime::Klak.Spout.SpoutSender
+  _spoutName: Oxipital Spout
+  _keepAlpha: 0
+  _captureMethod: 2
+  _sourceCamera: {fileID: 0}
+  _sourceTexture: {fileID: 0}
+  _resources: {fileID: 11400000, guid: f449ebbe2051c2e4d993eaa773a410de, type: 2}
+--- !u!114 &3472945289439197762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 747319308627875840}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d59ae4f317f9b4f8b8d64f71768aaea6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Klak.Syphon.Runtime::Klak.Syphon.SyphonServer
+  <KeepAlpha>k__BackingField: 0
+  <Resources>k__BackingField: {fileID: 11400000, guid: 4f35cf6570beb4605a26cd2d71c4f8fc, type: 2}
+  _serverName: Oxipital Syphon
+  _captureMethod: 2
+  _sourceCamera: {fileID: 0}
+  _sourceTexture: {fileID: 0}
+--- !u!114 &1484947027075339128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 747319308627875840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aba11dbc1cea22c41a93225c8115853e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Gamgie.Oxipital.Camera::Oxipital.CameraSpoutManager
+  spoutSender: {fileID: 6218335588434684820}
+  syphonServer: {fileID: 3472945289439197762}
+  mainCamera: {fileID: 4592129141062553480}
+  width: 1920
+  height: 1080
+  rtFormat: 0
 --- !u!1 &1389140324534363056
 GameObject:
   m_ObjectHideFlags: 0
@@ -923,6 +1017,7 @@ Transform:
   - {fileID: 430021902533602672}
   - {fileID: 8734734947673018707}
   - {fileID: 3198310362265928863}
+  - {fileID: 8829618311327199666}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7354194575915209346

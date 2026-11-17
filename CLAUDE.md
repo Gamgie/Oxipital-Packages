@@ -308,6 +308,13 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
 - `CameraSpoutManager` (`[ExecuteInEditMode]`) owns the output `RenderTexture` that the main camera renders
   into, and streams it out via `Klak.Spout.SpoutSender` on Windows or `Klak.Syphon.SyphonServer` on macOS
   (platform is chosen at runtime via `Application.platform`); output resolution is persisted in `PlayerPrefs`.
+  Since 1.7.2 it is part of `Cameras.prefab`: child `Unity Spout Oxipital` (same name as in the Engine scenes, a
+  Chataigne address), sender "Oxipital Spout" / server "Oxipital Syphon", 1920 x 1080 by default. While it is on,
+  the Game view is empty (the camera renders into the texture); deactivating the object gives the camera back to
+  the screen and frees the texture (`OnDisable`). Off in a full dome (`isFullDome`). The texture is `DontSave`
+  (it used to be saved into the scene through the camera's Target Texture) and released when its size changes.
+  The Spout input (`SpoutReceiver` "Oxipital_InputTexture" into Core's `InputTexture`) stays in the scenes: it
+  feeds Core, which the Camera package does not depend on.
 
 ### Gaussian splats (`Core/Runtime/Scripts/GaussianSplatting/`, `Core/Runtime/Scripts/OxiSplat/`)
 
