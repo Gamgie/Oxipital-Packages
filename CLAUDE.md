@@ -101,7 +101,10 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
   - `OrbGroup : DancerGroup<Dancer>` is the concrete emitter: it owns a `VisualEffect` (VFX Graph) and pushes
     emitter shape/appearance/physics parameters (also `[InBuffer]`-tagged) into it every frame, plus loads
     emitter meshes/textures (via `MeshLoader`, using glTFast to load `.glb` files from the project's
-    `Assets/StreamingAssets/emitters`) and optional Spout-fed textures.
+    `Assets/StreamingAssets/emitters`) and optional Spout-fed textures. `MeshLoader` gives glTFast an
+    `UninterruptedDeferAgent` (1.7.4): without one, glTFast creates a "glTF-StableFramerate" GameObject, and as
+    `loadMeshes` is `async`, a Play mode stopped mid-load finished in the Editor, where that object stayed in the
+    open scene and got saved with it. The few small emitter files now load in one go at start.
   - Emitter shapes: Unity only reads `StreamingAssets` from the project's `Assets`, so the basic shapes ship in
     `Core/Emitters~` and `Core/Editor/EmitterInstaller.cs` copies them into the project (automatically when the
     project has no `emitters` folder yet, or from the menu *Oxipital > Installer les émetteurs de base*).

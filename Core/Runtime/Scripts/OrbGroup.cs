@@ -26,6 +26,11 @@ namespace Oxipital
             
 
         static Dictionary<string, MeshTextured> shapeMeshMap;
+
+        // glTFast without a defer agent creates its own, a "glTF-StableFramerate" GameObject kept across scenes
+        // (DontDestroyOnLoad), that spreads loading over frames. The emitter shapes are a few small files loaded
+        // once at start: load them in one go, with no object in the scene.
+        static readonly GLTFast.UninterruptedDeferAgent deferAgent = new GLTFast.UninterruptedDeferAgent();
         public MeshLoader()
         {
         }
@@ -45,7 +50,7 @@ namespace Oxipital
 
                 try
                 {
-                    var gltfI = new GLTFast.GltfImport();
+                    var gltfI = new GLTFast.GltfImport(deferAgent: deferAgent);
                     var success = await gltfI.Load(file);
 
                     if (success)
