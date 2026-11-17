@@ -123,7 +123,7 @@ This pattern is reused for orbs (`OrbManager : BaseManager<OrbGroup>`), physics 
       laptop RTX 3060, 348 k grains at 1080p: cube (24 vertices) 44 ms GPU, icosphere (42) 122 ms, smooth
       octahedron (6) about 21 ms; each sun shadow cascade adds about 9 ms, the shadow map resolution nothing.
       `VFX/Meshes/OrbOctahedron` (6 vertices, smooth normals, same apparent size as the cube) is the cheap grain
-      to put in Particle Mesh; since 1.6.1 it is the default `particleMesh` of the Orb Group and Orb Group Lit prefabs
+      to put in Particle Mesh; since 1.6.1 it is the default `particleMesh` of the Orb Group prefab (the legacy Orb Group Lit prefab, without a VFX asset, was removed in 1.7.6)
       (the icosphere stays the VFX default when the field is empty). Measured in Soledad act 3 (dome 2048), 264 k
       LitMesh grains: icosphere about 200 ms, octahedron 33 ms with 5 shadowed point lights, 17 ms without them: a
       point light with shadows renders 6 faces, each drawing every grain again. A new render type goes at the END of

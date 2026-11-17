@@ -1,6 +1,6 @@
 {
   "name": "com.gamgie.oxipital.camera",
-  "version": "1.7.5",
+  "version": "1.7.6",
   "displayName": "Oxipital Camera",
   "description": "Caméras d'Oxipital : modes orbital, vaisseau, capteur SOMI et spline, transitions Cinemachine, sortie Spout / Syphon, suivi du dôme. Pilotées en direct depuis Chataigne via OSCQuery.",
   "unity": "6000.3",
