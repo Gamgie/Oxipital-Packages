@@ -7,7 +7,7 @@ namespace Oxipital
     /// <summary>
     /// Shows the Spout / Syphon output on screen: while CameraSpoutManager is on, the main camera renders into its
     /// texture and the Game view would be empty, so this full-screen RawImage (on a Screen Space Overlay canvas,
-    /// child "Spout Preview" of the Cameras rig) displays that texture. Hidden when the output is off (an empty
+    /// "Spout Preview", child of "Unity Spout Oxipital" in the Cameras rig) displays that texture. Hidden when the output is off (an empty
     /// RawImage would draw white) and in a full dome. Runs in edit mode too, like CameraSpoutManager.
     /// </summary>
     [ExecuteAlways]

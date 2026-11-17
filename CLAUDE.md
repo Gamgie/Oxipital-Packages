@@ -313,8 +313,8 @@ exposing a collection. The Chataigne module itself lives in the Oxipital-Engine 
   (platform is chosen at runtime via `Application.platform`); output resolution is persisted in `PlayerPrefs`.
   Since 1.7.2 it is part of `Cameras.prefab`: child `Unity Spout Oxipital` (same name as in the Engine scenes, a
   Chataigne address), sender "Oxipital Spout" / server "Oxipital Syphon", 1920 x 1080 by default. While it is on,
-  the camera renders into the texture, so the child `Spout Preview` (1.7.3, as in the Engine scenes: a Screen
-  Space Overlay canvas, sorting order -100, under any other UI) shows it full screen through a RawImage driven by
+  the camera renders into the texture, so its child `Spout Preview` (1.7.3, under `Unity Spout Oxipital` since
+  1.7.5 so the two switch off together; a Screen Space Overlay canvas, sorting order -100, under any other UI) shows it full screen through a RawImage driven by
   `SpoutFeedback` (`[ExecuteAlways]`, reads `CameraSpoutManager.OutputTexture`, so Syphon too; hidden when there is
   no texture, since an empty RawImage draws white, and in a full dome). The preview is stretched to the window: a
   window of another aspect than the output deforms it, the output itself is not. Deactivating
