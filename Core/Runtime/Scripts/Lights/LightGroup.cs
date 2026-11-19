@@ -206,5 +206,11 @@ namespace Oxipital
         {
             _time = 0f;
         }
+
+        // Redeclared so OSCQuery exposes it, as on OrbGroup and StandardForceGroup (Chataigne's "Reset Pattern")
+        public new void ResetPattern()
+        {
+            base.ResetPattern();
+        }
     }
 }
